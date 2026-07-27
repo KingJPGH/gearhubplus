@@ -14,16 +14,346 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      companies: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      company_members: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["company_role"]
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["company_role"]
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["company_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          is_available: boolean
+          name: string
+          notes: string | null
+          owner_id: string
+          serial_number: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          name: string
+          notes?: string | null
+          owner_id: string
+          serial_number?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          name?: string
+          notes?: string | null
+          owner_id?: string
+          serial_number?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          role_title: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id: string
+          phone?: string | null
+          role_title?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          role_title?: string | null
+        }
+        Relationships: []
+      }
+      project_members: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_members_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shoot_day_equipment: {
+        Row: {
+          created_at: string
+          equipment_id: string
+          id: string
+          owner_id: string
+          shoot_day_id: string
+        }
+        Insert: {
+          created_at?: string
+          equipment_id: string
+          id?: string
+          owner_id: string
+          shoot_day_id: string
+        }
+        Update: {
+          created_at?: string
+          equipment_id?: string
+          id?: string
+          owner_id?: string
+          shoot_day_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shoot_day_equipment_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shoot_day_equipment_shoot_day_id_fkey"
+            columns: ["shoot_day_id"]
+            isOneToOne: false
+            referencedRelation: "shoot_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shoot_day_members: {
+        Row: {
+          created_at: string
+          id: string
+          shoot_day_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          shoot_day_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          shoot_day_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shoot_day_members_shoot_day_id_fkey"
+            columns: ["shoot_day_id"]
+            isOneToOne: false
+            referencedRelation: "shoot_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shoot_day_requests: {
+        Row: {
+          created_at: string
+          created_by: string
+          details: string | null
+          id: string
+          is_resolved: boolean
+          label: string
+          shoot_day_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          details?: string | null
+          id?: string
+          is_resolved?: boolean
+          label: string
+          shoot_day_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          details?: string | null
+          id?: string
+          is_resolved?: boolean
+          label?: string
+          shoot_day_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shoot_day_requests_shoot_day_id_fkey"
+            columns: ["shoot_day_id"]
+            isOneToOne: false
+            referencedRelation: "shoot_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shoot_days: {
+        Row: {
+          call_time: string | null
+          created_at: string
+          id: string
+          location: string | null
+          notes: string | null
+          project_id: string
+          shoot_date: string
+          title: string | null
+        }
+        Insert: {
+          call_time?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          project_id: string
+          shoot_date: string
+          title?: string | null
+        }
+        Update: {
+          call_time?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          project_id?: string
+          shoot_date?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shoot_days_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_company_admin: {
+        Args: { _company: string; _user: string }
+        Returns: boolean
+      }
+      is_company_member: {
+        Args: { _company: string; _user: string }
+        Returns: boolean
+      }
+      project_company: { Args: { _project: string }; Returns: string }
+      shares_company: { Args: { _a: string; _b: string }; Returns: boolean }
+      shoot_day_company: { Args: { _day: string }; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      company_role: "admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +480,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      company_role: ["admin", "member"],
+    },
   },
 } as const
