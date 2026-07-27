@@ -83,6 +83,7 @@ export type Database = {
           name: string
           notes: string | null
           owner_id: string
+          quantity: number
           serial_number: string | null
         }
         Insert: {
@@ -93,6 +94,7 @@ export type Database = {
           name: string
           notes?: string | null
           owner_id: string
+          quantity?: number
           serial_number?: string | null
         }
         Update: {
@@ -103,6 +105,7 @@ export type Database = {
           name?: string
           notes?: string | null
           owner_id?: string
+          quantity?: number
           serial_number?: string | null
         }
         Relationships: [
@@ -111,6 +114,41 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_unavailability: {
+        Row: {
+          created_at: string
+          equipment_id: string
+          id: string
+          owner_id: string
+          reason: string | null
+          unavailable_on: string
+        }
+        Insert: {
+          created_at?: string
+          equipment_id: string
+          id?: string
+          owner_id: string
+          reason?: string | null
+          unavailable_on: string
+        }
+        Update: {
+          created_at?: string
+          equipment_id?: string
+          id?: string
+          owner_id?: string
+          reason?: string | null
+          unavailable_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_unavailability_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
             referencedColumns: ["id"]
           },
         ]
@@ -216,6 +254,7 @@ export type Database = {
           equipment_id: string
           id: string
           owner_id: string
+          quantity: number
           shoot_day_id: string
         }
         Insert: {
@@ -223,6 +262,7 @@ export type Database = {
           equipment_id: string
           id?: string
           owner_id: string
+          quantity?: number
           shoot_day_id: string
         }
         Update: {
@@ -230,6 +270,7 @@ export type Database = {
           equipment_id?: string
           id?: string
           owner_id?: string
+          quantity?: number
           shoot_day_id?: string
         }
         Relationships: [

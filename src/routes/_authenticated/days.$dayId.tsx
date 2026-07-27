@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Check, Plus, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
+import { categoryChipClass } from "@/lib/equipment-categories";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/days/$dayId")({
   head: () => ({
@@ -102,12 +104,25 @@ function DayPage() {
     },
   });
 
+  const blocked = useQuery({
+    queryKey: ["day-gear-blocked", dayId, day.data?.shoot_date],
+    enabled: !!day.data?.shoot_date,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("equipment_unavailability")
+        .select("equipment_id")
+        .eq("unavailable_on", day.data!.shoot_date);
+      if (error) throw error;
+      return data.map((r) => r.equipment_id);
+    },
+  });
+
   const selected = useQuery({
     queryKey: ["day-gear", dayId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shoot_day_equipment")
-        .select("id, equipment_id, owner_id, equipment(name, category, serial_number)")
+        .select("id, equipment_id, owner_id, equipment(name, category, serial_number, quantity)")
         .eq("shoot_day_id", dayId);
       if (error) throw error;
       return data;
@@ -209,6 +224,27 @@ function DayPage() {
   });
 
   const selectedIds = new Set((selected.data ?? []).map((s) => s.equipment_id));
+  const blockedIds = new Set(blocked.data ?? []);
+
+  type PoolItem = NonNullable<typeof gear.data>[number];
+  type SelectedRow = NonNullable<typeof selected.data>[number];
+
+  const poolByOwner = Object.entries(
+    (gear.data ?? [])
+      .filter((item) => !blockedIds.has(item.id))
+      .reduce<Record<string, PoolItem[]>>((acc, item) => {
+        (acc[item.owner_id] ??= []).push(item);
+        return acc;
+      }, {}),
+  );
+
+  const selectedByOwner = Object.entries(
+    (selected.data ?? []).reduce<Record<string, SelectedRow[]>>((acc, row) => {
+      (acc[row.owner_id] ??= []).push(row);
+      return acc;
+    }, {}),
+  );
+
   const nameFor = (userId: string) => {
     const row =
       dayCrew.data?.find((m) => m.user_id === userId) ??
@@ -289,41 +325,69 @@ function DayPage() {
             <p className="label-tech mb-2">
               Équipement disponible {isAdmin ? "(sélection admin)" : ""}
             </p>
-            <div className="panel divide-y divide-border">
-              {gear.data?.length ? (
-                gear.data.map((item) => {
-                  const on = selectedIds.has(item.id);
-                  return (
-                    <div key={item.id} className="flex items-center gap-2 p-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{item.name}</p>
-                        <p className="label-tech">
-                          {[nameFor(item.owner_id), item.category].filter(Boolean).join(" · ")}
-                        </p>
-                      </div>
-                      {isAdmin ? (
-                        <button
-                          onClick={() =>
-                            toggleGear.mutate({
-                              equipmentId: item.id,
-                              ownerId: item.owner_id,
-                              add: !on,
-                            })
-                          }
-                          className={
-                            on
-                              ? "rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-brand-foreground"
-                              : "rounded-md border border-input px-2.5 py-1 text-xs text-muted-foreground"
-                          }
-                        >
-                          {on ? "Retenu" : "Choisir"}
-                        </button>
-                      ) : null}
+            <div className="space-y-3">
+              {poolByOwner.length ? (
+                poolByOwner.map(([ownerId, items]) => (
+                  <div key={ownerId} className="panel overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-border bg-accent/60 px-3 py-2">
+                      <p className="text-sm font-medium">{nameFor(ownerId)}</p>
+                      <span className="label-tech">
+                        {items.filter((i) => selectedIds.has(i.id)).length}/{items.length} retenu(s)
+                      </span>
                     </div>
-                  );
-                })
+                    <div className="divide-y divide-border">
+                      {items.map((item) => {
+                        const on = selectedIds.has(item.id);
+                        return (
+                          <div
+                            key={item.id}
+                            className={cn(
+                              "flex items-center gap-2 p-3",
+                              on && "bg-brand-soft/60",
+                            )}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="truncate text-sm font-medium">{item.name}</p>
+                                <span
+                                  className={cn(
+                                    "rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                                    categoryChipClass(item.category),
+                                  )}
+                                >
+                                  {item.category ?? "Sans catégorie"}
+                                </span>
+                                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                                  ×{item.quantity}
+                                </span>
+                              </div>
+                            </div>
+                            {isAdmin ? (
+                              <button
+                                onClick={() =>
+                                  toggleGear.mutate({
+                                    equipmentId: item.id,
+                                    ownerId: item.owner_id,
+                                    add: !on,
+                                  })
+                                }
+                                className={
+                                  on
+                                    ? "rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-brand-foreground"
+                                    : "rounded-md border border-input px-2.5 py-1 text-xs text-muted-foreground"
+                                }
+                              >
+                                {on ? "Retenu" : "Choisir"}
+                              </button>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
               ) : (
-                <p className="p-6 text-sm text-muted-foreground">
+                <p className="panel p-6 text-sm text-muted-foreground">
                   Aucun équipement disponible pour les membres de cette journée.
                 </p>
               )}
@@ -333,31 +397,74 @@ function DayPage() {
 
         <section className="space-y-6">
           <div>
-            <p className="label-tech mb-2">Équipement à apporter</p>
-            <div className="panel divide-y divide-border">
-              {selected.data?.length ? (
-                selected.data.map((row) => {
-                  const eq = row.equipment as {
-                    name: string;
-                    category: string | null;
-                    serial_number: string | null;
-                  } | null;
-                  return (
-                    <div key={row.id} className="p-3">
-                      <p className="text-sm font-medium">{eq?.name}</p>
-                      <p className="label-tech">
-                        {[nameFor(row.owner_id), eq?.category, eq?.serial_number]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </p>
+            <p className="label-tech mb-2">
+              Équipement à apporter · {selected.data?.length ?? 0} item(s)
+            </p>
+            <div className="space-y-3">
+              {selectedByOwner.length ? (
+                selectedByOwner.map(([ownerId, rows]) => (
+                  <div key={ownerId} className="panel overflow-hidden border-l-4 border-l-brand">
+                    <div className="flex items-center justify-between border-b border-border bg-brand-soft px-3 py-2">
+                      <p className="text-sm font-medium">{nameFor(ownerId)}</p>
+                      <span className="label-tech">{rows.length} item(s)</span>
                     </div>
-                  );
-                })
+                    <div className="divide-y divide-border">
+                      {rows.map((row) => {
+                        const eq = row.equipment as {
+                          name: string;
+                          category: string | null;
+                          serial_number: string | null;
+                          quantity: number;
+                        } | null;
+                        return (
+                          <div key={row.id} className="flex items-center gap-2 p-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="truncate text-sm font-medium">{eq?.name}</p>
+                                <span
+                                  className={cn(
+                                    "rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                                    categoryChipClass(eq?.category),
+                                  )}
+                                >
+                                  {eq?.category ?? "Sans catégorie"}
+                                </span>
+                                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                                  ×{eq?.quantity ?? 1}
+                                </span>
+                              </div>
+                              {eq?.serial_number ? (
+                                <p className="label-tech mt-1">{eq.serial_number}</p>
+                              ) : null}
+                            </div>
+                            {isAdmin ? (
+                              <button
+                                onClick={() =>
+                                  toggleGear.mutate({
+                                    equipmentId: row.equipment_id,
+                                    ownerId: row.owner_id,
+                                    add: false,
+                                  })
+                                }
+                                className="rounded-md border border-input px-2.5 py-1 text-xs text-muted-foreground hover:text-destructive"
+                              >
+                                Retirer
+                              </button>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
               ) : (
-                <p className="p-6 text-sm text-muted-foreground">Rien de retenu pour l'instant.</p>
+                <p className="panel p-6 text-sm text-muted-foreground">
+                  Rien de retenu pour l'instant.
+                </p>
               )}
             </div>
           </div>
+
 
           <div>
             <p className="label-tech mb-2">Équipement manquant / demandes spéciales</p>
