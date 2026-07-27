@@ -224,6 +224,27 @@ function DayPage() {
   });
 
   const selectedIds = new Set((selected.data ?? []).map((s) => s.equipment_id));
+  const blockedIds = new Set(blocked.data ?? []);
+
+  type PoolItem = NonNullable<typeof gear.data>[number];
+  type SelectedRow = NonNullable<typeof selected.data>[number];
+
+  const poolByOwner = Object.entries(
+    (gear.data ?? [])
+      .filter((item) => !blockedIds.has(item.id))
+      .reduce<Record<string, PoolItem[]>>((acc, item) => {
+        (acc[item.owner_id] ??= []).push(item);
+        return acc;
+      }, {}),
+  );
+
+  const selectedByOwner = Object.entries(
+    (selected.data ?? []).reduce<Record<string, SelectedRow[]>>((acc, row) => {
+      (acc[row.owner_id] ??= []).push(row);
+      return acc;
+    }, {}),
+  );
+
   const nameFor = (userId: string) => {
     const row =
       dayCrew.data?.find((m) => m.user_id === userId) ??
