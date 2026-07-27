@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Check, Plus, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
+import { categoryChipClass } from "@/lib/equipment-categories";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/days/$dayId")({
   head: () => ({
