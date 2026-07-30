@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { ChevronRight, FolderOpen, Plus, UserPlus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
-import { addCompanyMember } from "@/lib/team.functions";
+import { addCompanyMember, createOfflineMember } from "@/lib/team.functions";
 
 export const Route = createFileRoute("/_authenticated/companies/$companyId")({
   head: () => ({
@@ -25,6 +25,8 @@ function CompanyPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const addMemberFn = useServerFn(addCompanyMember);
+  const createOfflineFn = useServerFn(createOfflineMember);
+  const [offline, setOffline] = useState({ fullName: "", roleTitle: "" });
   const [projectName, setProjectName] = useState("");
   const [memberEmail, setMemberEmail] = useState("");
   const [memberRole, setMemberRole] = useState<"admin" | "member">("member");
@@ -76,7 +78,7 @@ function CompanyPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("company_members")
-        .select("id, role, user_id, profiles:user_id(full_name, email, role_title)")
+        .select("id, role, user_id, profiles:user_id(full_name, email, role_title, is_offline)")
         .eq("company_id", companyId);
       if (error) throw error;
       return data;
@@ -105,6 +107,24 @@ function CompanyPage() {
       setMemberEmail("");
       queryClient.invalidateQueries({ queryKey: ["company-members", companyId] });
       toast.success("Membre ajouté");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const addOffline = useMutation({
+    mutationFn: async () =>
+      createOfflineFn({
+        data: {
+          companyId,
+          fullName: offline.fullName.trim(),
+          roleTitle: offline.roleTitle.trim() || undefined,
+          role: "member",
+        },
+      }),
+    onSuccess: () => {
+      setOffline({ fullName: "", roleTitle: "" });
+      queryClient.invalidateQueries({ queryKey: ["company-members", companyId] });
+      toast.success("Profil hors ligne créé");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -218,12 +238,52 @@ function CompanyPage() {
             </form>
           ) : null}
 
+          {isAdmin ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (offline.fullName.trim()) addOffline.mutate();
+              }}
+              className="mb-3 space-y-2 rounded-xl bg-gradient-brand p-3"
+            >
+              <p className="label-tech">Profil hors ligne (sans compte)</p>
+              <input
+                value={offline.fullName}
+                onChange={(e) => setOffline({ ...offline, fullName: e.target.value })}
+                placeholder="Nom complet"
+                maxLength={120}
+                required
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+              <div className="flex gap-2">
+                <input
+                  value={offline.roleTitle}
+                  onChange={(e) => setOffline({ ...offline, roleTitle: e.target.value })}
+                  placeholder="Poste (ex. Machiniste)"
+                  maxLength={120}
+                  className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+                <button
+                  type="submit"
+                  disabled={addOffline.isPending}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-tint-1 px-3.5 py-2 text-sm font-medium text-brand-foreground disabled:opacity-60"
+                >
+                  <UserPlus className="size-4" /> Créer
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Vous gérez vous-même l'inventaire de ce membre depuis « Inventaire ».
+              </p>
+            </form>
+          ) : null}
+
           <div className="space-y-2">
             {members.data?.map((m) => {
               const profile = m.profiles as {
                 full_name: string | null;
                 email: string | null;
                 role_title: string | null;
+                is_offline: boolean | null;
               } | null;
               return (
                 <div key={m.id} className="panel flex items-center gap-3 p-3">
@@ -237,6 +297,11 @@ function CompanyPage() {
                         .join(" · ")}
                     </p>
                   </div>
+                  {profile?.is_offline ? (
+                    <span className="rounded-full bg-tint-3-soft px-2 py-0.5 text-[11px] font-medium text-tint-3">
+                      Hors ligne
+                    </span>
+                  ) : null}
                   {isAdmin ? (
                     <button
                       onClick={() => removeMember.mutate(m.id)}

@@ -231,7 +231,7 @@ function DayPage() {
 
   const poolByOwner = Object.entries(
     (gear.data ?? [])
-      .filter((item) => !blockedIds.has(item.id))
+      .filter((item) => !blockedIds.has(item.id) && !selectedIds.has(item.id))
       .reduce<Record<string, PoolItem[]>>((acc, item) => {
         (acc[item.owner_id] ??= []).push(item);
         return acc;
@@ -322,18 +322,20 @@ function DayPage() {
           </div>
 
           <div>
-            <p className="label-tech mb-2">
-              Équipement disponible {isAdmin ? "(sélection admin)" : ""}
-            </p>
+            <div className="mb-2 flex items-center gap-2 rounded-lg head-strip-2 px-3 py-2">
+              <span className="size-2 rounded-full bg-tint-5" />
+              <p className="label-tech">Disponible — à choisir</p>
+              <span className="label-tech ml-auto">
+                {poolByOwner.reduce((n, [, items]) => n + items.length, 0)} item(s)
+              </span>
+            </div>
             <div className="space-y-3">
               {poolByOwner.length ? (
                 poolByOwner.map(([ownerId, items]) => (
                   <div key={ownerId} className="panel overflow-hidden">
                     <div className="flex items-center justify-between border-b border-border bg-accent/60 px-3 py-2">
                       <p className="text-sm font-medium">{nameFor(ownerId)}</p>
-                      <span className="label-tech">
-                        {items.filter((i) => selectedIds.has(i.id)).length}/{items.length} retenu(s)
-                      </span>
+                      <span className="label-tech">{items.length} dispo.</span>
                     </div>
                     <div className="divide-y divide-border">
                       {items.map((item) => {
@@ -341,10 +343,7 @@ function DayPage() {
                         return (
                           <div
                             key={item.id}
-                            className={cn(
-                              "flex items-center gap-2 p-3",
-                              on && "bg-brand-soft/60",
-                            )}
+                            className="flex items-center gap-2 p-3"
                           >
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
@@ -374,7 +373,7 @@ function DayPage() {
                                 className={
                                   on
                                     ? "rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-brand-foreground"
-                                    : "rounded-md border border-input px-2.5 py-1 text-xs text-muted-foreground"
+                                    : "rounded-md bg-tint-5-soft px-2.5 py-1 text-xs font-medium text-tint-5"
                                 }
                               >
                                 {on ? "Retenu" : "Choisir"}
@@ -388,7 +387,7 @@ function DayPage() {
                 ))
               ) : (
                 <p className="panel p-6 text-sm text-muted-foreground">
-                  Aucun équipement disponible pour les membres de cette journée.
+                  Tout l'équipement disponible a été choisi (ou aucun membre présent).
                 </p>
               )}
             </div>
@@ -397,13 +396,15 @@ function DayPage() {
 
         <section className="space-y-6">
           <div>
-            <p className="label-tech mb-2">
-              Équipement à apporter · {selected.data?.length ?? 0} item(s)
-            </p>
+            <div className="mb-2 flex items-center gap-2 rounded-lg head-strip px-3 py-2">
+              <span className="size-2 rounded-full bg-brand" />
+              <p className="label-tech">Choisi — à apporter</p>
+              <span className="label-tech ml-auto">{selected.data?.length ?? 0} item(s)</span>
+            </div>
             <div className="space-y-3">
               {selectedByOwner.length ? (
                 selectedByOwner.map(([ownerId, rows]) => (
-                  <div key={ownerId} className="panel overflow-hidden border-l-4 border-l-brand">
+                  <div key={ownerId} className="panel-accent overflow-hidden border-l-4 border-l-brand">
                     <div className="flex items-center justify-between border-b border-border bg-brand-soft px-3 py-2">
                       <p className="text-sm font-medium">{nameFor(ownerId)}</p>
                       <span className="label-tech">{rows.length} item(s)</span>

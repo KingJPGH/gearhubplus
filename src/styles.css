@@ -71,8 +71,8 @@
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.972 0.003 106.4);
+  --radius: 0.7rem;
+  --background: oklch(0.978 0.006 250);
   --foreground: oklch(0.29 0.031 240.2);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.29 0.031 240.2);
@@ -86,9 +86,9 @@
   --muted-foreground: oklch(0.52 0.02 240);
   --accent: oklch(0.938 0.021 250);
   --accent-foreground: oklch(0.37 0.038 235.6);
-  --brand: oklch(0.652 0.176 256.4);
+  --brand: oklch(0.62 0.215 262);
   --brand-foreground: oklch(0.99 0.002 106);
-  --brand-soft: oklch(0.951 0.028 254);
+  --brand-soft: oklch(0.955 0.042 258);
   --tint-1: oklch(0.52 0.17 275);
   --tint-1-soft: oklch(0.955 0.028 275);
   --tint-2: oklch(0.5 0.11 195);
@@ -202,4 +202,36 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-panel);
+}
+
+@utility bg-gradient-brand {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--color-brand) 14%, var(--color-card)),
+    color-mix(in oklab, var(--color-tint-1) 10%, var(--color-card))
+  );
+  border: 1px solid color-mix(in oklab, var(--color-brand) 22%, transparent);
+}
+
+@utility panel-accent {
+  background-color: var(--color-card);
+  border: 1px solid color-mix(in oklab, var(--color-brand) 28%, var(--color-border));
+  border-radius: var(--radius-xl);
+  box-shadow: 0 1px 2px oklch(0.35 0.03 240 / 0.06), 0 10px 30px color-mix(in oklab, var(--color-brand) 14%, transparent);
+}
+
+@utility head-strip {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-brand) 16%, var(--color-card)),
+    var(--color-card)
+  );
+}
+
+@utility head-strip-2 {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-tint-5) 16%, var(--color-card)),
+    var(--color-card)
+  );
 }
