@@ -159,6 +159,8 @@ export type Database = {
           email: string | null
           full_name: string
           id: string
+          is_offline: boolean
+          managed_by: string | null
           phone: string | null
           role_title: string | null
         }
@@ -167,6 +169,8 @@ export type Database = {
           email?: string | null
           full_name?: string
           id: string
+          is_offline?: boolean
+          managed_by?: string | null
           phone?: string | null
           role_title?: string | null
         }
@@ -175,6 +179,8 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+          is_offline?: boolean
+          managed_by?: string | null
           phone?: string | null
           role_title?: string | null
         }
@@ -423,6 +429,10 @@ export type Database = {
       }
       is_company_member: {
         Args: { _company: string; _user: string }
+        Returns: boolean
+      }
+      manages_profile: {
+        Args: { _profile: string; _user: string }
         Returns: boolean
       }
       project_company: { Args: { _project: string }; Returns: string }
