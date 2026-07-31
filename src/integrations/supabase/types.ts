@@ -418,11 +418,39 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_company_admin: {
         Args: { _company: string; _user: string }
         Returns: boolean
@@ -431,6 +459,7 @@ export type Database = {
         Args: { _company: string; _user: string }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user: string }; Returns: boolean }
       manages_profile: {
         Args: { _profile: string; _user: string }
         Returns: boolean
@@ -440,6 +469,7 @@ export type Database = {
       shoot_day_company: { Args: { _day: string }; Returns: string }
     }
     Enums: {
+      app_role: "super_admin"
       company_role: "admin" | "member"
     }
     CompositeTypes: {
@@ -568,6 +598,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["super_admin"],
       company_role: ["admin", "member"],
     },
   },

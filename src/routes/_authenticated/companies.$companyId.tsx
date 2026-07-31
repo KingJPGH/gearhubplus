@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ChevronRight, FolderOpen, Plus, UserPlus } from "lucide-react";
+import { ChevronRight, FolderOpen, Plus, UserPlus, Save, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsSuperAdmin } from "@/lib/roles";
 import { addCompanyMember, createOfflineMember } from "@/lib/team.functions";
 
 export const Route = createFileRoute("/_authenticated/companies/$companyId")({
@@ -30,6 +31,8 @@ function CompanyPage() {
   const [projectName, setProjectName] = useState("");
   const [memberEmail, setMemberEmail] = useState("");
   const [memberRole, setMemberRole] = useState<"admin" | "member">("member");
+  const [companyName, setCompanyName] = useState("");
+
 
   const company = useQuery({
     queryKey: ["company", companyId],
@@ -43,6 +46,12 @@ function CompanyPage() {
       return data;
     },
   });
+
+  useEffect(() => {
+    if (company.data?.name) setCompanyName(company.data.name);
+  }, [company.data?.name]);
+
+
 
   const me = useQuery({
     queryKey: ["company-role", companyId],
@@ -58,7 +67,9 @@ function CompanyPage() {
       return data?.role ?? null;
     },
   });
-  const isAdmin = me.data === "admin";
+  const isSuper = useIsSuperAdmin();
+  const isAdmin = me.data === "admin" || isSuper;
+
 
   const projects = useQuery({
     queryKey: ["projects", companyId],
@@ -138,17 +149,86 @@ function CompanyPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const renameCompany = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("companies")
+        .update({ name: companyName.trim() })
+        .eq("id", companyId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Entreprise mise à jour");
+      queryClient.invalidateQueries({ queryKey: ["company", companyId] });
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteCompany = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("companies").delete().eq("id", companyId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Entreprise supprimée");
+      queryClient.invalidateQueries({ queryKey: ["companies"] });
+      navigate({ to: "/dashboard" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <AppShell
       title={company.data?.name ?? "Entreprise"}
-      subtitle={isAdmin ? "Vous êtes administrateur de cette entreprise." : "Vous êtes membre."}
+      subtitle={
+        isSuper
+          ? "Super administrateur — accès total."
+          : isAdmin
+            ? "Vous êtes administrateur de cette entreprise."
+            : "Vous êtes membre."
+      }
       breadcrumb={
         <Link to="/dashboard" className="hover:underline">
           Entreprises
         </Link>
       }
     >
+      {isAdmin ? (
+        <div className="panel mb-6 flex flex-wrap items-center gap-2 p-3">
+          <input
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            maxLength={100}
+            placeholder="Nom de l'entreprise"
+            className="min-w-56 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
+          <button
+            onClick={() => companyName.trim() && renameCompany.mutate()}
+            disabled={renameCompany.isPending}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+          >
+            <Save className="size-4" /> Enregistrer
+          </button>
+          <button
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Supprimer cette entreprise ? Les projets, journées et affectations liés seront supprimés.",
+                )
+              )
+                deleteCompany.mutate();
+            }}
+            disabled={deleteCompany.isPending}
+            className="inline-flex items-center gap-1.5 rounded-md border border-destructive/40 px-3.5 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-60"
+          >
+            <Trash2 className="size-4" /> Supprimer
+          </button>
+        </div>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+
         <section>
           <p className="label-tech mb-2">Projets</p>
           {isAdmin ? (

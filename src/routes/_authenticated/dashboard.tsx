@@ -6,6 +6,7 @@ import { Building2, Plus, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/lib/settings";
+import { useIsSuperAdmin } from "@/lib/roles";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function Dashboard() {
   const queryClient = useQueryClient();
   const t = useT();
+  const isSuper = useIsSuperAdmin();
   const [name, setName] = useState("");
   const [open, setOpen] = useState(false);
   const [profileName, setProfileName] = useState("");
@@ -50,8 +52,16 @@ function Dashboard() {
   }, [profile.data]);
 
   const companies = useQuery({
-    queryKey: ["companies"],
+    queryKey: ["companies", isSuper],
     queryFn: async () => {
+      if (isSuper) {
+        const { data, error } = await supabase
+          .from("companies")
+          .select("id, name")
+          .order("created_at");
+        if (error) throw error;
+        return data.map((c) => ({ role: "admin", companies: c }));
+      }
       const { data, error } = await supabase
         .from("company_members")
         .select("role, companies(id, name)")
