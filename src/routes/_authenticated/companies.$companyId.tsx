@@ -47,6 +47,12 @@ function CompanyPage() {
     },
   });
 
+  useEffect(() => {
+    if (company.data?.name) setCompanyName(company.data.name);
+  }, [company.data?.name]);
+
+
+
   const me = useQuery({
     queryKey: ["company-role", companyId],
     queryFn: async () => {
