@@ -47,6 +47,8 @@ const inputClass =
 
 function EquipmentPage() {
   const queryClient = useQueryClient();
+  const isSuper = useIsSuperAdmin();
+
   const [ownerId, setOwnerId] = useState<string>("self");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
