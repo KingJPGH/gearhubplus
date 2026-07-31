@@ -31,6 +31,8 @@ function CompanyPage() {
   const [projectName, setProjectName] = useState("");
   const [memberEmail, setMemberEmail] = useState("");
   const [memberRole, setMemberRole] = useState<"admin" | "member">("member");
+  const [companyName, setCompanyName] = useState("");
+
 
   const company = useQuery({
     queryKey: ["company", companyId],
