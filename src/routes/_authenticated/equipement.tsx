@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsSuperAdmin } from "@/lib/roles";
 import {
   EQUIPMENT_CATEGORIES,
   QUANTITY_OPTIONS,
@@ -64,15 +65,16 @@ function EquipmentPage() {
   });
 
   const managed = useQuery({
-    queryKey: ["managed-profiles"],
+    queryKey: ["managed-profiles", isSuper],
     enabled: !!me.data,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, role_title")
-        .eq("is_offline", true)
-        .eq("managed_by", me.data!)
-        .order("full_name");
+      let q = supabase.from("profiles").select("id, full_name, role_title");
+      if (isSuper) {
+        q = q.neq("id", me.data!);
+      } else {
+        q = q.eq("is_offline", true).eq("managed_by", me.data!);
+      }
+      const { data, error } = await q.order("full_name");
       if (error) throw error;
       return data;
     },
