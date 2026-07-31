@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { CalendarDays, ChevronRight, Plus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsSuperAdmin } from "@/lib/roles";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   head: () => ({
@@ -54,7 +55,8 @@ function ProjectPage() {
       return data?.role ?? null;
     },
   });
-  const isAdmin = role.data === "admin";
+  const isSuper = useIsSuperAdmin();
+  const isAdmin = role.data === "admin" || isSuper;
 
   const days = useQuery({
     queryKey: ["shoot-days", projectId],

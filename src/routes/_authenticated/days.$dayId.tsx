@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Check, Plus, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsSuperAdmin } from "@/lib/roles";
 import { categoryChipClass } from "@/lib/equipment-categories";
 import { cn } from "@/lib/utils";
 
@@ -60,7 +61,8 @@ function DayPage() {
       return data?.role ?? null;
     },
   });
-  const isAdmin = role.data === "admin";
+  const isSuper = useIsSuperAdmin();
+  const isAdmin = role.data === "admin" || isSuper;
 
   const dayCrew = useQuery({
     queryKey: ["day-members", dayId],
