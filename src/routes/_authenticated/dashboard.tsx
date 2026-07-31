@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Building2, Plus, ChevronRight } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
+import { useT } from "@/lib/settings";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const queryClient = useQueryClient();
+  const t = useT();
   const [name, setName] = useState("");
   const [open, setOpen] = useState(false);
   const [profileName, setProfileName] = useState("");
@@ -94,14 +96,14 @@ function Dashboard() {
 
   return (
     <AppShell
-      title="Entreprises"
-      subtitle="Vos boîtes de production et leurs projets."
+      title={t("dash.title")}
+      subtitle={t("dash.subtitle")}
       actions={
         <button
           onClick={() => setOpen((v) => !v)}
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="inline-flex items-center gap-1.5 btn-brand px-4 py-2 text-sm"
         >
-          <Plus className="size-4" /> Nouvelle entreprise
+          <Plus className="size-4" /> {t("dash.new")}
         </button>
       }
     >
@@ -124,9 +126,9 @@ function Dashboard() {
           <button
             type="submit"
             disabled={createCompany.isPending}
-            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-foreground disabled:opacity-60"
+            className="btn-brand px-5 py-2 text-sm disabled:opacity-60"
           >
-            Créer
+            {t("dash.create")}
           </button>
         </form>
       ) : null}
@@ -134,7 +136,7 @@ function Dashboard() {
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-3">
           {companies.isLoading ? (
-            <p className="text-sm text-muted-foreground">Chargement…</p>
+            <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
           ) : companies.data?.length ? (
             companies.data.map((row) => {
               const company = row.companies as { id: string; name: string } | null;
@@ -151,7 +153,7 @@ function Dashboard() {
                   </span>
                   <div className="min-w-0">
                     <p className="truncate font-medium">{company.name}</p>
-                    <p className="label-tech">{row.role === "admin" ? "Administrateur" : "Membre"}</p>
+                    <p className="label-tech">{row.role === "admin" ? t("dash.admin") : t("dash.member")}</p>
                   </div>
                   <ChevronRight className="ml-auto size-4 text-muted-foreground" />
                 </Link>
@@ -159,26 +161,25 @@ function Dashboard() {
             })
           ) : (
             <div className="panel p-6 text-sm text-muted-foreground">
-              Aucune entreprise pour l'instant. Créez la vôtre ou demandez à un administrateur de
-              vous ajouter.
+              {t("dash.empty")}
             </div>
           )}
         </div>
 
         <div className="panel h-fit p-5">
-          <p className="label-tech">Mon profil</p>
+          <p className="label-tech">{t("dash.profile")}</p>
           <div className="mt-3 space-y-2">
             <input
               value={profileName}
               onChange={(e) => setProfileName(e.target.value)}
-              placeholder="Nom complet"
+              placeholder={t("dash.fullname")}
               maxLength={80}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
             <input
               value={roleTitle}
               onChange={(e) => setRoleTitle(e.target.value)}
-              placeholder="Poste (ex. Directeur photo)"
+              placeholder={t("dash.roletitle")}
               maxLength={80}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
@@ -188,7 +189,7 @@ function Dashboard() {
               disabled={saveProfile.isPending}
               className="w-full rounded-md border border-input px-3 py-2 text-sm font-medium transition-colors hover:bg-accent disabled:opacity-60"
             >
-              Enregistrer
+              {t("dash.save")}
             </button>
           </div>
         </div>
