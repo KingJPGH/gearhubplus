@@ -58,7 +58,9 @@ function CompanyPage() {
       return data?.role ?? null;
     },
   });
-  const isAdmin = me.data === "admin";
+  const isSuper = useIsSuperAdmin();
+  const isAdmin = me.data === "admin" || isSuper;
+
 
   const projects = useQuery({
     queryKey: ["projects", companyId],
