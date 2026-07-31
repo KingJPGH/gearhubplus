@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedParametresRouteImport } from './routes/_authenticated/parametres'
 import { Route as AuthenticatedEquipementRouteImport } from './routes/_authenticated/equipement'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
@@ -37,6 +38,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedParametresRoute = AuthenticatedParametresRouteImport.update({
+  id: '/parametres',
+  path: '/parametres',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedEquipementRoute = AuthenticatedEquipementRouteImport.update({
   id: '/equipement',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipement': typeof AuthenticatedEquipementRoute
+  '/parametres': typeof AuthenticatedParametresRoute
   '/companies/$companyId': typeof AuthenticatedCompaniesCompanyIdRoute
   '/days/$dayId': typeof AuthenticatedDaysDayIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipement': typeof AuthenticatedEquipementRoute
+  '/parametres': typeof AuthenticatedParametresRoute
   '/companies/$companyId': typeof AuthenticatedCompaniesCompanyIdRoute
   '/days/$dayId': typeof AuthenticatedDaysDayIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/equipement': typeof AuthenticatedEquipementRoute
+  '/_authenticated/parametres': typeof AuthenticatedParametresRoute
   '/_authenticated/companies/$companyId': typeof AuthenticatedCompaniesCompanyIdRoute
   '/_authenticated/days/$dayId': typeof AuthenticatedDaysDayIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/dashboard'
     | '/equipement'
+    | '/parametres'
     | '/companies/$companyId'
     | '/days/$dayId'
     | '/projects/$projectId'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/dashboard'
     | '/equipement'
+    | '/parametres'
     | '/companies/$companyId'
     | '/days/$dayId'
     | '/projects/$projectId'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/dashboard'
     | '/_authenticated/equipement'
+    | '/_authenticated/parametres'
     | '/_authenticated/companies/$companyId'
     | '/_authenticated/days/$dayId'
     | '/_authenticated/projects/$projectId'
@@ -169,6 +181,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/parametres': {
+      id: '/_authenticated/parametres'
+      path: '/parametres'
+      fullPath: '/parametres'
+      preLoaderRoute: typeof AuthenticatedParametresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/equipement': {
       id: '/_authenticated/equipement'
       path: '/equipement'
@@ -210,6 +229,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEquipementRoute: typeof AuthenticatedEquipementRoute
+  AuthenticatedParametresRoute: typeof AuthenticatedParametresRoute
   AuthenticatedCompaniesCompanyIdRoute: typeof AuthenticatedCompaniesCompanyIdRoute
   AuthenticatedDaysDayIdRoute: typeof AuthenticatedDaysDayIdRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
@@ -218,6 +238,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEquipementRoute: AuthenticatedEquipementRoute,
+  AuthenticatedParametresRoute: AuthenticatedParametresRoute,
   AuthenticatedCompaniesCompanyIdRoute: AuthenticatedCompaniesCompanyIdRoute,
   AuthenticatedDaysDayIdRoute: AuthenticatedDaysDayIdRoute,
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
