@@ -81,14 +81,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Plateau — Hub d'équipement de production" },
+      { title: "Plateau — Hub d'équipement pour boîtes de production" },
       {
         name: "description",
         content:
-          "Hub organisationnel pour gérer l'équipement des équipes de production : profils, projets et journées de tournage.",
+          "Centralisez l'équipement de votre équipe : chaque membre déclare son matériel disponible, les admins l'assignent aux journées de tournage.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:title", content: "Plateau — Hub d'équipement pour boîtes de production" },
+      { name: "twitter:title", content: "Plateau — Hub d'équipement pour boîtes de production" },
+      { property: "og:description", content: "Centralisez l'équipement de votre équipe : chaque membre déclare son matériel disponible, les admins l'assignent aux journées de tournage." },
+      { name: "twitter:description", content: "Centralisez l'équipement de votre équipe : chaque membre déclare son matériel disponible, les admins l'assignent aux journées de tournage." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e16d404e-efbd-42d4-811b-ee2d85311e01/id-preview-ae8d487e--4f499858-5006-4268-a002-990325be2f1f.lovable.app-1785460889125.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e16d404e-efbd-42d4-811b-ee2d85311e01/id-preview-ae8d487e--4f499858-5006-4268-a002-990325be2f1f.lovable.app-1785460889125.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

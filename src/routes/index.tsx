@@ -11,11 +11,11 @@ export const Route = createFileRoute("/")({
         content:
           "Centralisez l'équipement de votre équipe : chaque membre déclare son matériel disponible, les admins l'assignent aux journées de tournage.",
       },
-      { property: "og:title", content: "Plateau — Hub d'équipement de production" },
+      { property: "og:title", content: "Plateau — Hub d'équipement pour boîtes de production" },
       {
         property: "og:description",
         content:
-          "Entreprise, projet, journée de tournage : la liste exacte du matériel que chaque membre doit apporter.",
+          "Centralisez l'équipement de votre équipe : chaque membre déclare son matériel disponible, les admins l'assignent aux journées de tournage.",
       },
     ],
   }),
