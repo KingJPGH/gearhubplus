@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Boxes, CalendarDays, ClipboardList, Camera } from "lucide-react";
+import { Boxes, CalendarDays, ClipboardList, Clapperboard, ArrowRight } from "lucide-react";
+import { useT } from "@/lib/settings";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,69 +23,54 @@ export const Route = createFileRoute("/")({
 });
 
 const FEATURES = [
-  {
-    icon: Boxes,
-    title: "Inventaire par membre",
-    text: "Chaque membre entre son équipement et le marque disponible ou non disponible.",
-  },
-  {
-    icon: ClipboardList,
-    title: "Assignation contrôlée",
-    text: "L'administrateur ne peut choisir que le matériel rendu disponible par l'équipe.",
-  },
-  {
-    icon: CalendarDays,
-    title: "Journées de tournage",
-    text: "Une liste claire par date, avec équipement manquant et demandes spéciales.",
-  },
-];
+  { icon: Boxes, key: "f1", tint: "text-tint-1 bg-tint-1-soft" },
+  { icon: ClipboardList, key: "f2", tint: "text-tint-2 bg-tint-2-soft" },
+  { icon: CalendarDays, key: "f3", tint: "text-tint-5 bg-tint-5-soft" },
+] as const;
 
 function Index() {
+  const t = useT();
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+    <div className="min-h-screen">
+      <header className="sticky top-0 z-30 border-b border-border bg-background/70 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Camera className="size-4" />
+            <span className="flex size-9 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-tint-4 text-brand-foreground shadow-glow">
+              <Clapperboard className="size-4" />
             </span>
-            <span className="font-display text-sm font-semibold">Plateau</span>
+            <span className="font-display text-base font-bold tracking-tight">Plateau</span>
           </div>
-          <Link
-            to="/auth"
-            className="rounded-md bg-brand px-3.5 py-2 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
-          >
-            Se connecter
+          <Link to="/auth" className="btn-brand px-4 py-2 text-sm">
+            {t("landing.login")}
           </Link>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-4">
-        <section className="py-16">
-          <p className="label-tech">Entreprise → Projet → Journée de tournage</p>
-          <h1 className="mt-4 max-w-2xl text-4xl font-semibold leading-[1.1] sm:text-5xl">
-            Le hub d'équipement de votre boîte de production.
+        <section className="py-20 sm:py-28">
+          <span className="inline-flex items-center rounded-full border border-brand/30 bg-brand-soft px-3 py-1 font-mono text-[11px] uppercase tracking-[0.14em] text-brand">
+            {t("landing.kicker")}
+          </span>
+          <h1 className="mt-6 max-w-3xl text-5xl font-extrabold leading-[1.02] tracking-tight sm:text-7xl">
+            <span className="text-gradient-brand">{t("landing.title")}</span>
           </h1>
-          <p className="mt-5 max-w-xl text-base text-muted-foreground">
-            Chaque membre tient son inventaire à jour. L'administrateur bâtit, pour chaque date de
-            tournage, la liste précise du matériel que l'équipe doit apporter.
-          </p>
-          <div className="mt-8">
-            <Link
-              to="/auth"
-              className="inline-flex items-center rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Commencer
+          <p className="mt-6 max-w-xl text-lg text-muted-foreground">{t("landing.lead")}</p>
+          <div className="mt-9">
+            <Link to="/auth" className="btn-brand inline-flex items-center gap-2 px-6 py-3 text-sm">
+              {t("landing.cta")} <ArrowRight className="size-4" />
             </Link>
           </div>
         </section>
 
-        <section className="grid gap-4 pb-20 sm:grid-cols-3">
+        <section className="grid gap-4 pb-24 sm:grid-cols-3">
           {FEATURES.map((f) => (
-            <div key={f.title} className="panel p-5">
-              <f.icon className="size-5 text-brand" />
-              <h2 className="mt-3 text-base font-semibold">{f.title}</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">{f.text}</p>
+            <div key={f.key} className="panel p-6 transition-transform hover:-translate-y-1">
+              <span className={`flex size-10 items-center justify-center rounded-2xl ${f.tint}`}>
+                <f.icon className="size-5" />
+              </span>
+              <h2 className="mt-4 text-lg font-bold">{t(`landing.${f.key}.title`)}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">{t(`landing.${f.key}.text`)}</p>
             </div>
           ))}
         </section>
