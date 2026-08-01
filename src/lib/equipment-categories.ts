@@ -44,3 +44,24 @@ export function toDateKey(date: Date): string {
 export function fromDateKey(key: string): Date {
   return new Date(`${key}T12:00:00`);
 }
+
+const ORDER = new Map(EQUIPMENT_CATEGORIES.map((c, i) => [c.value, i]));
+
+export const NO_CATEGORY = "Sans catégorie";
+
+/** Group items by their category, following the reference category order. */
+export function groupByCategory<T>(
+  items: T[],
+  getCategory: (item: T) => string | null | undefined,
+): Array<[string, T[]]> {
+  const map = new Map<string, T[]>();
+  for (const item of items) {
+    const key = getCategory(item) || NO_CATEGORY;
+    const bucket = map.get(key);
+    if (bucket) bucket.push(item);
+    else map.set(key, [item]);
+  }
+  return [...map.entries()].sort(
+    (a, b) => (ORDER.get(a[0]) ?? 999) - (ORDER.get(b[0]) ?? 999) || a[0].localeCompare(b[0]),
+  );
+}
