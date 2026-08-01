@@ -90,22 +90,22 @@ function SuperAdminPage() {
     mutationFn: async ({
       table,
       id,
-      values,
+      value,
       key,
     }: {
       table: "companies" | "projects" | "shoot_days" | "profiles";
       id: string;
-      values: Record<string, string>;
+      value: string;
       key: string;
     }) => {
       const { error } =
         table === "companies"
-          ? await supabase.from("companies").update(values).eq("id", id)
+          ? await supabase.from("companies").update({ name: value }).eq("id", id)
           : table === "projects"
-            ? await supabase.from("projects").update(values).eq("id", id)
+            ? await supabase.from("projects").update({ name: value }).eq("id", id)
             : table === "shoot_days"
-              ? await supabase.from("shoot_days").update(values).eq("id", id)
-              : await supabase.from("profiles").update(values).eq("id", id);
+              ? await supabase.from("shoot_days").update({ title: value }).eq("id", id)
+              : await supabase.from("profiles").update({ full_name: value }).eq("id", id);
       if (error) throw error;
       return key;
     },
@@ -115,6 +115,7 @@ function SuperAdminPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const remove = useMutation({
     mutationFn: async ({
