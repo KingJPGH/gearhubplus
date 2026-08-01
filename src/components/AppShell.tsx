@@ -1,8 +1,9 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Clapperboard, Boxes, LayoutGrid, LogOut, Settings } from "lucide-react";
+import { Clapperboard, Boxes, LayoutGrid, LogOut, Settings, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsSuperAdmin } from "@/lib/roles";
 import { useT } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +12,7 @@ const NAV = [
   { to: "/equipement", key: "nav.inventory", icon: Boxes },
   { to: "/parametres", key: "nav.settings", icon: Settings },
 ] as const;
+
 
 export function AppShell({
   children,
