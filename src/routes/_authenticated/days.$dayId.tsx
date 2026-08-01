@@ -343,7 +343,74 @@ function DayPage() {
           </span>
         ) : null
       }
+      actions={
+        <Dialog>
+          <DialogTrigger asChild>
+            <button className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground shadow-sm transition-transform hover:-translate-y-px">
+              <ClipboardList className="size-4" /> Récapitulatif
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Récapitulatif — {dateLabel}</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              {[day.data?.title, day.data?.location, day.data?.call_time]
+                .filter(Boolean)
+                .join(" · ") || "Journée de tournage"}
+            </p>
+            <div className="space-y-4">
+              {selectedByOwner.length ? (
+                selectedByOwner.map(([ownerId, rows]) => (
+                  <div key={ownerId} className="rounded-xl border border-border p-3">
+                    <p className="mb-2 text-sm font-semibold">
+                      {nameFor(ownerId)}{" "}
+                      <span className="text-muted-foreground">— {rows.length} item(s)</span>
+                    </p>
+                    {groupByCategory(rows, (r) => equipmentOf(r)?.category).map(
+                      ([category, catRows]) => (
+                        <div key={category} className="mt-2">
+                          <p className="label-tech">{category}</p>
+                          <ul className="mt-1 space-y-0.5 text-sm">
+                            {catRows.map((r) => {
+                              const eq = equipmentOf(r);
+                              return (
+                                <li key={r.id}>
+                                  • {eq?.name} ×{eq?.quantity ?? 1}
+                                  {eq?.serial_number ? ` (${eq.serial_number})` : ""}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">Aucun équipement retenu.</p>
+              )}
+
+              {requests.data?.length ? (
+                <div className="rounded-xl border border-border p-3">
+                  <p className="mb-2 text-sm font-semibold">Notes et demandes spéciales</p>
+                  <ul className="space-y-1 text-sm">
+                    {requests.data.map((r) => (
+                      <li key={r.id} className={r.is_resolved ? "text-muted-foreground" : ""}>
+                        • {r.label}
+                        {r.details ? ` — ${r.details}` : ""}
+                        {r.is_resolved ? " (réglé)" : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          </DialogContent>
+        </Dialog>
+      }
     >
+
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
         <section className="space-y-6">
           <div>
