@@ -116,6 +116,22 @@ function EquipmentPage() {
     },
   });
 
+  const memberUnav = useQuery({
+    queryKey: ["member-unavailability", targetId],
+    enabled: !!targetId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("member_unavailability")
+        .select("unavailable_on")
+        .eq("profile_id", targetId!);
+      if (error) throw error;
+      return data.map((r) => r.unavailable_on);
+    },
+  });
+
+  const memberDates = [...(memberUnav.data ?? [])].sort();
+
+
   const datesFor = (equipmentId: string) =>
     (unavailability.data ?? [])
       .filter((u) => u.equipment_id === equipmentId)
