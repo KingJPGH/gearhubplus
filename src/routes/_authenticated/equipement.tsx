@@ -20,6 +20,7 @@ import {
   QUANTITY_OPTIONS,
   categoryChipClass,
   fromDateKey,
+  groupByCategory,
   toDateKey,
 } from "@/lib/equipment-categories";
 import { cn } from "@/lib/utils";
