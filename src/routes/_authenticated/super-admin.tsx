@@ -267,7 +267,7 @@ function SuperAdminPage() {
                 rename.mutate({
                   table: "profiles",
                   id: m.id,
-                  values: { full_name },
+                  value: full_name,
                   key: "sa-members",
                 })
               }
