@@ -20,6 +20,7 @@ import {
   QUANTITY_OPTIONS,
   categoryChipClass,
   fromDateKey,
+  groupByCategory,
   toDateKey,
 } from "@/lib/equipment-categories";
 import { cn } from "@/lib/utils";
@@ -115,6 +116,22 @@ function EquipmentPage() {
     },
   });
 
+  const memberUnav = useQuery({
+    queryKey: ["member-unavailability", targetId],
+    enabled: !!targetId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("member_unavailability")
+        .select("unavailable_on")
+        .eq("profile_id", targetId!);
+      if (error) throw error;
+      return data.map((r) => r.unavailable_on);
+    },
+  });
+
+  const memberDates = [...(memberUnav.data ?? [])].sort();
+
+
   const datesFor = (equipmentId: string) =>
     (unavailability.data ?? [])
       .filter((u) => u.equipment_id === equipmentId)
@@ -206,6 +223,32 @@ function EquipmentPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const setMemberDates = useMutation({
+    mutationFn: async (dates: string[]) => {
+      const current = memberDates;
+      const toAdd = dates.filter((d) => !current.includes(d));
+      const toRemove = current.filter((d) => !dates.includes(d));
+      if (toAdd.length) {
+        const { error } = await supabase
+          .from("member_unavailability")
+          .insert(toAdd.map((d) => ({ profile_id: targetId!, unavailable_on: d })));
+        if (error) throw error;
+      }
+      if (toRemove.length) {
+        const { error } = await supabase
+          .from("member_unavailability")
+          .delete()
+          .eq("profile_id", targetId!)
+          .in("unavailable_on", toRemove);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["member-unavailability", targetId] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   return (
     <AppShell
       title="Inventaire"
@@ -236,6 +279,35 @@ function EquipmentPage() {
           ) : null}
         </div>
       ) : null}
+
+      <div className="panel mb-5 flex flex-wrap items-center gap-3 p-3">
+        <span className="flex items-center gap-2 text-sm font-medium">
+          <CalendarDays className="size-4 text-tint-6" /> Indisponibilité complète du membre
+        </span>
+        <p className="text-xs text-muted-foreground">
+          Les dates choisies rendent <strong>tout</strong> l'inventaire de {targetName} indisponible.
+        </p>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-input px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent">
+              <CalendarDays className="size-4" />
+              {memberDates.length ? `${memberDates.length} journée(s) bloquée(s)` : "Choisir des dates"}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="multiple"
+              selected={memberDates.map(fromDateKey)}
+              onSelect={(value) => setMemberDates.mutate((value ?? []).map(toDateKey))}
+              className={cn("p-3 pointer-events-auto")}
+            />
+            <p className="border-t border-border p-3 text-xs text-muted-foreground">
+              Utile pour une absence : aucun de ses objets ne pourra être choisi ces journées-là.
+            </p>
+          </PopoverContent>
+        </Popover>
+      </div>
+
 
       <form
         onSubmit={(e) => {
@@ -298,11 +370,25 @@ function EquipmentPage() {
         </button>
       </form>
 
-      <div className="space-y-2">
+      <div className="space-y-5">
         {equipment.isLoading ? (
           <p className="text-sm text-muted-foreground">Chargement…</p>
         ) : equipment.data?.length ? (
-          equipment.data.map((item) => {
+          groupByCategory(equipment.data, (i) => i.category).map(([category, items]) => (
+            <div key={category} className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    "rounded-full border px-2.5 py-1 text-[11px] font-semibold",
+                    categoryChipClass(category),
+                  )}
+                >
+                  {category}
+                </span>
+                <span className="label-tech">{items.length} objet(s)</span>
+                <span className="h-px flex-1 bg-border" />
+              </div>
+              {items.map((item) => {
             const dates = datesFor(item.id);
             const editing = editingId === item.id;
             return (
@@ -405,7 +491,10 @@ function EquipmentPage() {
                 )}
               </div>
             );
-          })
+              })}
+            </div>
+          ))
+
         ) : (
           <div className="panel p-6 text-sm text-muted-foreground">
             Aucun équipement déclaré pour l'instant.

@@ -2,11 +2,18 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, Plus, X } from "lucide-react";
+import { Check, ClipboardList, Plus, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSuperAdmin } from "@/lib/roles";
-import { categoryChipClass } from "@/lib/equipment-categories";
+import { categoryChipClass, groupByCategory } from "@/lib/equipment-categories";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/days/$dayId")({
@@ -119,6 +126,33 @@ function DayPage() {
     },
   });
 
+  const memberBlocked = useQuery({
+    queryKey: ["day-member-blocked", dayId, day.data?.shoot_date],
+    enabled: !!day.data?.shoot_date,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("member_unavailability")
+        .select("profile_id")
+        .eq("unavailable_on", day.data!.shoot_date);
+      if (error) throw error;
+      return data.map((r) => r.profile_id);
+    },
+  });
+
+  const conflicts = useQuery({
+    queryKey: ["day-gear-conflicts", dayId, day.data?.shoot_date, crewIds.join(",")],
+    enabled: !!day.data?.shoot_date && crewIds.length > 0 && (gear.data?.length ?? 0) > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("equipment_conflicts_on", {
+        _date: day.data!.shoot_date,
+        _ids: (gear.data ?? []).map((g) => g.id),
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+
   const selected = useQuery({
     queryKey: ["day-gear", dayId],
     queryFn: async () => {
@@ -227,18 +261,34 @@ function DayPage() {
 
   const selectedIds = new Set((selected.data ?? []).map((s) => s.equipment_id));
   const blockedIds = new Set(blocked.data ?? []);
+  const blockedOwners = new Set(memberBlocked.data ?? []);
+  const conflictById = new Map(
+    (conflicts.data ?? [])
+      .filter((c) => c.shoot_day_id !== dayId)
+      .map((c) => [c.equipment_id, c] as const),
+  );
 
   type PoolItem = NonNullable<typeof gear.data>[number];
   type SelectedRow = NonNullable<typeof selected.data>[number];
 
+  const blockReason = (item: PoolItem): string | null => {
+    const conflict = conflictById.get(item.id);
+    if (conflict)
+      return `Utilisé par « ${conflict.project_name} »${conflict.day_title ? ` — ${conflict.day_title}` : ""}`;
+    if (blockedOwners.has(item.owner_id)) return "Membre indisponible cette journée";
+    if (blockedIds.has(item.id)) return "Bloqué par le propriétaire cette journée";
+    return null;
+  };
+
   const poolByOwner = Object.entries(
     (gear.data ?? [])
-      .filter((item) => !blockedIds.has(item.id) && !selectedIds.has(item.id))
+      .filter((item) => !selectedIds.has(item.id))
       .reduce<Record<string, PoolItem[]>>((acc, item) => {
         (acc[item.owner_id] ??= []).push(item);
         return acc;
       }, {}),
   );
+
 
   const selectedByOwner = Object.entries(
     (selected.data ?? []).reduce<Record<string, SelectedRow[]>>((acc, row) => {
@@ -254,6 +304,15 @@ function DayPage() {
     const p = row?.profiles as ProfileLite | null;
     return p?.full_name || p?.email || "Membre";
   };
+
+  const equipmentOf = (row: SelectedRow) =>
+    row.equipment as {
+      name: string;
+      category: string | null;
+      serial_number: string | null;
+      quantity: number;
+    } | null;
+
 
   const dateLabel = day.data
     ? new Date(`${day.data.shoot_date}T12:00:00`).toLocaleDateString("fr-CA", {
@@ -284,7 +343,74 @@ function DayPage() {
           </span>
         ) : null
       }
+      actions={
+        <Dialog>
+          <DialogTrigger asChild>
+            <button className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground shadow-sm transition-transform hover:-translate-y-px">
+              <ClipboardList className="size-4" /> Récapitulatif
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Récapitulatif — {dateLabel}</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              {[day.data?.title, day.data?.location, day.data?.call_time]
+                .filter(Boolean)
+                .join(" · ") || "Journée de tournage"}
+            </p>
+            <div className="space-y-4">
+              {selectedByOwner.length ? (
+                selectedByOwner.map(([ownerId, rows]) => (
+                  <div key={ownerId} className="rounded-xl border border-border p-3">
+                    <p className="mb-2 text-sm font-semibold">
+                      {nameFor(ownerId)}{" "}
+                      <span className="text-muted-foreground">— {rows.length} item(s)</span>
+                    </p>
+                    {groupByCategory(rows, (r) => equipmentOf(r)?.category).map(
+                      ([category, catRows]) => (
+                        <div key={category} className="mt-2">
+                          <p className="label-tech">{category}</p>
+                          <ul className="mt-1 space-y-0.5 text-sm">
+                            {catRows.map((r) => {
+                              const eq = equipmentOf(r);
+                              return (
+                                <li key={r.id}>
+                                  • {eq?.name} ×{eq?.quantity ?? 1}
+                                  {eq?.serial_number ? ` (${eq.serial_number})` : ""}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">Aucun équipement retenu.</p>
+              )}
+
+              {requests.data?.length ? (
+                <div className="rounded-xl border border-border p-3">
+                  <p className="mb-2 text-sm font-semibold">Notes et demandes spéciales</p>
+                  <ul className="space-y-1 text-sm">
+                    {requests.data.map((r) => (
+                      <li key={r.id} className={r.is_resolved ? "text-muted-foreground" : ""}>
+                        • {r.label}
+                        {r.details ? ` — ${r.details}` : ""}
+                        {r.is_resolved ? " (réglé)" : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          </DialogContent>
+        </Dialog>
+      }
     >
+
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
         <section className="space-y-6">
           <div>
@@ -340,51 +466,83 @@ function DayPage() {
                       <span className="label-tech">{items.length} dispo.</span>
                     </div>
                     <div className="divide-y divide-border">
-                      {items.map((item) => {
-                        const on = selectedIds.has(item.id);
-                        return (
-                          <div
-                            key={item.id}
-                            className="flex items-center gap-2 p-3"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <p className="truncate text-sm font-medium">{item.name}</p>
-                                <span
+                      {groupByCategory(items, (i) => i.category).map(([category, catItems]) => (
+                        <div key={category}>
+                          <div className="flex items-center gap-2 px-3 py-1.5">
+                            <span
+                              className={cn(
+                                "rounded-full border px-2 py-0.5 text-[11px] font-semibold",
+                                categoryChipClass(category),
+                              )}
+                            >
+                              {category}
+                            </span>
+                            <span className="label-tech">{catItems.length}</span>
+                          </div>
+                          <div className="divide-y divide-border">
+                            {catItems.map((item) => {
+                              const reason = blockReason(item);
+                              return (
+                                <div
+                                  key={item.id}
                                   className={cn(
-                                    "rounded-full border px-2 py-0.5 text-[11px] font-medium",
-                                    categoryChipClass(item.category),
+                                    "flex items-center gap-2 p-3",
+                                    reason && "bg-destructive/10",
                                   )}
                                 >
-                                  {item.category ?? "Sans catégorie"}
-                                </span>
-                                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                                  ×{item.quantity}
-                                </span>
-                              </div>
-                            </div>
-                            {isAdmin ? (
-                              <button
-                                onClick={() =>
-                                  toggleGear.mutate({
-                                    equipmentId: item.id,
-                                    ownerId: item.owner_id,
-                                    add: !on,
-                                  })
-                                }
-                                className={
-                                  on
-                                    ? "rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-brand-foreground"
-                                    : "rounded-md bg-tint-5-soft px-2.5 py-1 text-xs font-medium text-tint-5"
-                                }
-                              >
-                                {on ? "Retenu" : "Choisir"}
-                              </button>
-                            ) : null}
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <p
+                                        className={cn(
+                                          "truncate text-sm font-medium",
+                                          reason && "text-destructive",
+                                        )}
+                                      >
+                                        {item.name}
+                                      </p>
+                                      <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                                        ×{item.quantity}
+                                      </span>
+                                      {reason ? (
+                                        <span className="rounded-full bg-destructive px-2 py-0.5 text-[11px] font-semibold text-destructive-foreground">
+                                          Indisponible
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                    {reason ? (
+                                      <p className="mt-1 text-xs font-medium text-destructive">
+                                        {reason}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                  {isAdmin ? (
+                                    <button
+                                      disabled={!!reason}
+                                      onClick={() =>
+                                        toggleGear.mutate({
+                                          equipmentId: item.id,
+                                          ownerId: item.owner_id,
+                                          add: true,
+                                        })
+                                      }
+                                      className={cn(
+                                        "rounded-md px-2.5 py-1 text-xs font-medium",
+                                        reason
+                                          ? "cursor-not-allowed border border-destructive/40 text-destructive/70"
+                                          : "bg-tint-5-soft text-tint-5",
+                                      )}
+                                    >
+                                      {reason ? "Pris" : "Choisir"}
+                                    </button>
+                                  ) : null}
+                                </div>
+                              );
+                            })}
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
+
                   </div>
                 ))
               ) : (
@@ -412,52 +570,59 @@ function DayPage() {
                       <span className="label-tech">{rows.length} item(s)</span>
                     </div>
                     <div className="divide-y divide-border">
-                      {rows.map((row) => {
-                        const eq = row.equipment as {
-                          name: string;
-                          category: string | null;
-                          serial_number: string | null;
-                          quantity: number;
-                        } | null;
-                        return (
-                          <div key={row.id} className="flex items-center gap-2 p-3">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <p className="truncate text-sm font-medium">{eq?.name}</p>
-                                <span
-                                  className={cn(
-                                    "rounded-full border px-2 py-0.5 text-[11px] font-medium",
-                                    categoryChipClass(eq?.category),
-                                  )}
-                                >
-                                  {eq?.category ?? "Sans catégorie"}
-                                </span>
-                                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                                  ×{eq?.quantity ?? 1}
-                                </span>
-                              </div>
-                              {eq?.serial_number ? (
-                                <p className="label-tech mt-1">{eq.serial_number}</p>
-                              ) : null}
-                            </div>
-                            {isAdmin ? (
-                              <button
-                                onClick={() =>
-                                  toggleGear.mutate({
-                                    equipmentId: row.equipment_id,
-                                    ownerId: row.owner_id,
-                                    add: false,
-                                  })
-                                }
-                                className="rounded-md border border-input px-2.5 py-1 text-xs text-muted-foreground hover:text-destructive"
+                      {groupByCategory(rows, (r) => equipmentOf(r)?.category).map(
+                        ([category, catRows]) => (
+                          <div key={category}>
+                            <div className="flex items-center gap-2 px-3 py-1.5">
+                              <span
+                                className={cn(
+                                  "rounded-full border px-2 py-0.5 text-[11px] font-semibold",
+                                  categoryChipClass(category),
+                                )}
                               >
-                                Retirer
-                              </button>
-                            ) : null}
+                                {category}
+                              </span>
+                              <span className="label-tech">{catRows.length}</span>
+                            </div>
+                            <div className="divide-y divide-border">
+                              {catRows.map((row) => {
+                                const eq = equipmentOf(row);
+                                return (
+                                  <div key={row.id} className="flex items-center gap-2 p-3">
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <p className="truncate text-sm font-medium">{eq?.name}</p>
+                                        <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                                          ×{eq?.quantity ?? 1}
+                                        </span>
+                                      </div>
+                                      {eq?.serial_number ? (
+                                        <p className="label-tech mt-1">{eq.serial_number}</p>
+                                      ) : null}
+                                    </div>
+                                    {isAdmin ? (
+                                      <button
+                                        onClick={() =>
+                                          toggleGear.mutate({
+                                            equipmentId: row.equipment_id,
+                                            ownerId: row.owner_id,
+                                            add: false,
+                                          })
+                                        }
+                                        className="rounded-md border border-input px-2.5 py-1 text-xs text-muted-foreground hover:text-destructive"
+                                      >
+                                        Retirer
+                                      </button>
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                        );
-                      })}
+                        ),
+                      )}
                     </div>
+
                   </div>
                 ))
               ) : (

@@ -1,8 +1,9 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Clapperboard, Boxes, LayoutGrid, LogOut, Settings } from "lucide-react";
+import { Clapperboard, Boxes, LayoutGrid, LogOut, Settings, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsSuperAdmin } from "@/lib/roles";
 import { useT } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +12,7 @@ const NAV = [
   { to: "/equipement", key: "nav.inventory", icon: Boxes },
   { to: "/parametres", key: "nav.settings", icon: Settings },
 ] as const;
+
 
 export function AppShell({
   children,
@@ -28,7 +30,9 @@ export function AppShell({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const t = useT();
+  const isSuper = useIsSuperAdmin();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -61,7 +65,20 @@ export function AppShell({
                 <span className="hidden sm:inline">{t(item.key)}</span>
               </Link>
             ))}
+            {isSuper ? (
+              <Link
+                to="/super-admin"
+                className={cn(
+                  "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium text-tint-6 transition-colors hover:bg-accent",
+                  pathname.startsWith("/super-admin") && "bg-tint-6-soft",
+                )}
+              >
+                <ShieldCheck className="size-4" />
+                <span className="hidden sm:inline">Super admin</span>
+              </Link>
+            ) : null}
           </nav>
+
           <button
             onClick={signOut}
             className="ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"

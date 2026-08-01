@@ -153,6 +153,38 @@ export type Database = {
           },
         ]
       }
+      member_unavailability: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string
+          reason: string | null
+          unavailable_on: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id: string
+          reason?: string | null
+          unavailable_on: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string
+          reason?: string | null
+          unavailable_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_unavailability_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -444,6 +476,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      equipment_conflicts_on: {
+        Args: { _date: string; _ids: string[] }
+        Returns: {
+          day_title: string
+          equipment_id: string
+          project_name: string
+          shoot_day_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
