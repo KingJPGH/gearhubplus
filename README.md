@@ -1,20 +1,7 @@
 # Crew Gear Hub
 
-Cree un site web pour avoir un hub organisationnel pour l'équipement dune boite de prod.
-
-
-
-En gros, chaque membre de l'équipe à son profil. Il peut entrer son équipement (le valider disponible ou non disponible). Ensuite il peut se faire entrer dans un projet. En entrant dans un projet un administrateur peut voir son équipement et l'associé au projet.  Em dautre terme, cest une liste de l'équipement que le membre de l'équipe dois apporter pour le tournage.  L'arborescence est : 
-
-
-
-Entreprise, projet, journée de tournage. 
-
-
-
-Exemple: 
-
-Idvision Production,  Pour la vie saison 2, 31 juillet 2026.
+Hub organisationnel pour l'équipement d'une boite de production
+.
 
 
 
