@@ -383,51 +383,83 @@ function DayPage() {
                       <span className="label-tech">{items.length} dispo.</span>
                     </div>
                     <div className="divide-y divide-border">
-                      {items.map((item) => {
-                        const on = selectedIds.has(item.id);
-                        return (
-                          <div
-                            key={item.id}
-                            className="flex items-center gap-2 p-3"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <p className="truncate text-sm font-medium">{item.name}</p>
-                                <span
+                      {groupByCategory(items, (i) => i.category).map(([category, catItems]) => (
+                        <div key={category}>
+                          <div className="flex items-center gap-2 px-3 py-1.5">
+                            <span
+                              className={cn(
+                                "rounded-full border px-2 py-0.5 text-[11px] font-semibold",
+                                categoryChipClass(category),
+                              )}
+                            >
+                              {category}
+                            </span>
+                            <span className="label-tech">{catItems.length}</span>
+                          </div>
+                          <div className="divide-y divide-border">
+                            {catItems.map((item) => {
+                              const reason = blockReason(item);
+                              return (
+                                <div
+                                  key={item.id}
                                   className={cn(
-                                    "rounded-full border px-2 py-0.5 text-[11px] font-medium",
-                                    categoryChipClass(item.category),
+                                    "flex items-center gap-2 p-3",
+                                    reason && "bg-destructive/10",
                                   )}
                                 >
-                                  {item.category ?? "Sans catégorie"}
-                                </span>
-                                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                                  ×{item.quantity}
-                                </span>
-                              </div>
-                            </div>
-                            {isAdmin ? (
-                              <button
-                                onClick={() =>
-                                  toggleGear.mutate({
-                                    equipmentId: item.id,
-                                    ownerId: item.owner_id,
-                                    add: !on,
-                                  })
-                                }
-                                className={
-                                  on
-                                    ? "rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-brand-foreground"
-                                    : "rounded-md bg-tint-5-soft px-2.5 py-1 text-xs font-medium text-tint-5"
-                                }
-                              >
-                                {on ? "Retenu" : "Choisir"}
-                              </button>
-                            ) : null}
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <p
+                                        className={cn(
+                                          "truncate text-sm font-medium",
+                                          reason && "text-destructive",
+                                        )}
+                                      >
+                                        {item.name}
+                                      </p>
+                                      <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                                        ×{item.quantity}
+                                      </span>
+                                      {reason ? (
+                                        <span className="rounded-full bg-destructive px-2 py-0.5 text-[11px] font-semibold text-destructive-foreground">
+                                          Indisponible
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                    {reason ? (
+                                      <p className="mt-1 text-xs font-medium text-destructive">
+                                        {reason}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                  {isAdmin ? (
+                                    <button
+                                      disabled={!!reason}
+                                      onClick={() =>
+                                        toggleGear.mutate({
+                                          equipmentId: item.id,
+                                          ownerId: item.owner_id,
+                                          add: true,
+                                        })
+                                      }
+                                      className={cn(
+                                        "rounded-md px-2.5 py-1 text-xs font-medium",
+                                        reason
+                                          ? "cursor-not-allowed border border-destructive/40 text-destructive/70"
+                                          : "bg-tint-5-soft text-tint-5",
+                                      )}
+                                    >
+                                      {reason ? "Pris" : "Choisir"}
+                                    </button>
+                                  ) : null}
+                                </div>
+                              );
+                            })}
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
+
                   </div>
                 ))
               ) : (
