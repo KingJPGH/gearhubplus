@@ -305,6 +305,15 @@ function DayPage() {
     return p?.full_name || p?.email || "Membre";
   };
 
+  const equipmentOf = (row: SelectedRow) =>
+    row.equipment as {
+      name: string;
+      category: string | null;
+      serial_number: string | null;
+      quantity: number;
+    } | null;
+
+
   const dateLabel = day.data
     ? new Date(`${day.data.shoot_date}T12:00:00`).toLocaleDateString("fr-CA", {
         weekday: "long",
