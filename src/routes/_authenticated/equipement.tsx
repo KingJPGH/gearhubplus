@@ -238,6 +238,35 @@ function EquipmentPage() {
         </div>
       ) : null}
 
+      <div className="panel mb-5 flex flex-wrap items-center gap-3 p-3">
+        <span className="flex items-center gap-2 text-sm font-medium">
+          <CalendarDays className="size-4 text-tint-6" /> Indisponibilité complète du membre
+        </span>
+        <p className="text-xs text-muted-foreground">
+          Les dates choisies rendent <strong>tout</strong> l'inventaire de {targetName} indisponible.
+        </p>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-input px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent">
+              <CalendarDays className="size-4" />
+              {memberDates.length ? `${memberDates.length} journée(s) bloquée(s)` : "Choisir des dates"}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="multiple"
+              selected={memberDates.map(fromDateKey)}
+              onSelect={(value) => setMemberDates.mutate((value ?? []).map(toDateKey))}
+              className={cn("p-3 pointer-events-auto")}
+            />
+            <p className="border-t border-border p-3 text-xs text-muted-foreground">
+              Utile pour une absence : aucun de ses objets ne pourra être choisi ces journées-là.
+            </p>
+          </PopoverContent>
+        </Popover>
+      </div>
+
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
