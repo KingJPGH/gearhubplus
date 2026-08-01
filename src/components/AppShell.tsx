@@ -30,7 +30,9 @@ export function AppShell({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const t = useT();
+  const isSuper = useIsSuperAdmin();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
 
   async function signOut() {
     await queryClient.cancelQueries();
