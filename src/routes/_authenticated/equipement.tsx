@@ -207,6 +207,32 @@ function EquipmentPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const setMemberDates = useMutation({
+    mutationFn: async (dates: string[]) => {
+      const current = memberDates;
+      const toAdd = dates.filter((d) => !current.includes(d));
+      const toRemove = current.filter((d) => !dates.includes(d));
+      if (toAdd.length) {
+        const { error } = await supabase
+          .from("member_unavailability")
+          .insert(toAdd.map((d) => ({ profile_id: targetId!, unavailable_on: d })));
+        if (error) throw error;
+      }
+      if (toRemove.length) {
+        const { error } = await supabase
+          .from("member_unavailability")
+          .delete()
+          .eq("profile_id", targetId!)
+          .in("unavailable_on", toRemove);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["member-unavailability", targetId] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   return (
     <AppShell
       title="Inventaire"
