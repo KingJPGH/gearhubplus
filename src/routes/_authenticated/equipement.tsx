@@ -406,7 +406,10 @@ function EquipmentPage() {
                 )}
               </div>
             );
-          })
+              })}
+            </div>
+          ))
+
         ) : (
           <div className="panel p-6 text-sm text-muted-foreground">
             Aucun équipement déclaré pour l'instant.
