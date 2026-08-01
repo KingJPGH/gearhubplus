@@ -494,52 +494,59 @@ function DayPage() {
                       <span className="label-tech">{rows.length} item(s)</span>
                     </div>
                     <div className="divide-y divide-border">
-                      {rows.map((row) => {
-                        const eq = row.equipment as {
-                          name: string;
-                          category: string | null;
-                          serial_number: string | null;
-                          quantity: number;
-                        } | null;
-                        return (
-                          <div key={row.id} className="flex items-center gap-2 p-3">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <p className="truncate text-sm font-medium">{eq?.name}</p>
-                                <span
-                                  className={cn(
-                                    "rounded-full border px-2 py-0.5 text-[11px] font-medium",
-                                    categoryChipClass(eq?.category),
-                                  )}
-                                >
-                                  {eq?.category ?? "Sans catégorie"}
-                                </span>
-                                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                                  ×{eq?.quantity ?? 1}
-                                </span>
-                              </div>
-                              {eq?.serial_number ? (
-                                <p className="label-tech mt-1">{eq.serial_number}</p>
-                              ) : null}
-                            </div>
-                            {isAdmin ? (
-                              <button
-                                onClick={() =>
-                                  toggleGear.mutate({
-                                    equipmentId: row.equipment_id,
-                                    ownerId: row.owner_id,
-                                    add: false,
-                                  })
-                                }
-                                className="rounded-md border border-input px-2.5 py-1 text-xs text-muted-foreground hover:text-destructive"
+                      {groupByCategory(rows, (r) => equipmentOf(r)?.category).map(
+                        ([category, catRows]) => (
+                          <div key={category}>
+                            <div className="flex items-center gap-2 px-3 py-1.5">
+                              <span
+                                className={cn(
+                                  "rounded-full border px-2 py-0.5 text-[11px] font-semibold",
+                                  categoryChipClass(category),
+                                )}
                               >
-                                Retirer
-                              </button>
-                            ) : null}
+                                {category}
+                              </span>
+                              <span className="label-tech">{catRows.length}</span>
+                            </div>
+                            <div className="divide-y divide-border">
+                              {catRows.map((row) => {
+                                const eq = equipmentOf(row);
+                                return (
+                                  <div key={row.id} className="flex items-center gap-2 p-3">
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <p className="truncate text-sm font-medium">{eq?.name}</p>
+                                        <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                                          ×{eq?.quantity ?? 1}
+                                        </span>
+                                      </div>
+                                      {eq?.serial_number ? (
+                                        <p className="label-tech mt-1">{eq.serial_number}</p>
+                                      ) : null}
+                                    </div>
+                                    {isAdmin ? (
+                                      <button
+                                        onClick={() =>
+                                          toggleGear.mutate({
+                                            equipmentId: row.equipment_id,
+                                            ownerId: row.owner_id,
+                                            add: false,
+                                          })
+                                        }
+                                        className="rounded-md border border-input px-2.5 py-1 text-xs text-muted-foreground hover:text-destructive"
+                                      >
+                                        Retirer
+                                      </button>
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                        );
-                      })}
+                        ),
+                      )}
                     </div>
+
                   </div>
                 ))
               ) : (
