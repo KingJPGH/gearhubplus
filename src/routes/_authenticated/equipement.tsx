@@ -299,11 +299,25 @@ function EquipmentPage() {
         </button>
       </form>
 
-      <div className="space-y-2">
+      <div className="space-y-5">
         {equipment.isLoading ? (
           <p className="text-sm text-muted-foreground">Chargement…</p>
         ) : equipment.data?.length ? (
-          equipment.data.map((item) => {
+          groupByCategory(equipment.data, (i) => i.category).map(([category, items]) => (
+            <div key={category} className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    "rounded-full border px-2.5 py-1 text-[11px] font-semibold",
+                    categoryChipClass(category),
+                  )}
+                >
+                  {category}
+                </span>
+                <span className="label-tech">{items.length} objet(s)</span>
+                <span className="h-px flex-1 bg-border" />
+              </div>
+              {items.map((item) => {
             const dates = datesFor(item.id);
             const editing = editingId === item.id;
             return (
