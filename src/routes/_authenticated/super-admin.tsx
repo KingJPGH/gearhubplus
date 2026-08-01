@@ -204,7 +204,7 @@ function SuperAdminPage() {
                 </Link>
               }
               onSave={(name) =>
-                rename.mutate({ table: "companies", id: c.id, values: { name }, key: "sa-companies" })
+                rename.mutate({ table: "companies", id: c.id, value: name, key: "sa-companies" })
               }
               onDelete={() => remove.mutate({ table: "companies", id: c.id, key: "sa-companies" })}
             />
@@ -226,7 +226,7 @@ function SuperAdminPage() {
                 </Link>
               }
               onSave={(name) =>
-                rename.mutate({ table: "projects", id: p.id, values: { name }, key: "sa-projects" })
+                rename.mutate({ table: "projects", id: p.id, value: name, key: "sa-projects" })
               }
               onDelete={() => remove.mutate({ table: "projects", id: p.id, key: "sa-projects" })}
             />
@@ -249,7 +249,7 @@ function SuperAdminPage() {
                 </Link>
               }
               onSave={(title) =>
-                rename.mutate({ table: "shoot_days", id: d.id, values: { title }, key: "sa-days" })
+                rename.mutate({ table: "shoot_days", id: d.id, value: title, key: "sa-days" })
               }
               onDelete={() => remove.mutate({ table: "shoot_days", id: d.id, key: "sa-days" })}
             />
