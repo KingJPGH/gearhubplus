@@ -2,11 +2,18 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, Plus, X } from "lucide-react";
+import { Check, ClipboardList, Plus, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSuperAdmin } from "@/lib/roles";
-import { categoryChipClass } from "@/lib/equipment-categories";
+import { categoryChipClass, groupByCategory } from "@/lib/equipment-categories";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/days/$dayId")({
