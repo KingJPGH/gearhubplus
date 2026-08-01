@@ -227,18 +227,34 @@ function DayPage() {
 
   const selectedIds = new Set((selected.data ?? []).map((s) => s.equipment_id));
   const blockedIds = new Set(blocked.data ?? []);
+  const blockedOwners = new Set(memberBlocked.data ?? []);
+  const conflictById = new Map(
+    (conflicts.data ?? [])
+      .filter((c) => c.shoot_day_id !== dayId)
+      .map((c) => [c.equipment_id, c] as const),
+  );
 
   type PoolItem = NonNullable<typeof gear.data>[number];
   type SelectedRow = NonNullable<typeof selected.data>[number];
 
+  const blockReason = (item: PoolItem): string | null => {
+    const conflict = conflictById.get(item.id);
+    if (conflict)
+      return `Utilisé par « ${conflict.project_name} »${conflict.day_title ? ` — ${conflict.day_title}` : ""}`;
+    if (blockedOwners.has(item.owner_id)) return "Membre indisponible cette journée";
+    if (blockedIds.has(item.id)) return "Bloqué par le propriétaire cette journée";
+    return null;
+  };
+
   const poolByOwner = Object.entries(
     (gear.data ?? [])
-      .filter((item) => !blockedIds.has(item.id) && !selectedIds.has(item.id))
+      .filter((item) => !selectedIds.has(item.id))
       .reduce<Record<string, PoolItem[]>>((acc, item) => {
         (acc[item.owner_id] ??= []).push(item);
         return acc;
       }, {}),
   );
+
 
   const selectedByOwner = Object.entries(
     (selected.data ?? []).reduce<Record<string, SelectedRow[]>>((acc, row) => {
