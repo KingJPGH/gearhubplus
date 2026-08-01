@@ -119,6 +119,33 @@ function DayPage() {
     },
   });
 
+  const memberBlocked = useQuery({
+    queryKey: ["day-member-blocked", dayId, day.data?.shoot_date],
+    enabled: !!day.data?.shoot_date,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("member_unavailability")
+        .select("profile_id")
+        .eq("unavailable_on", day.data!.shoot_date);
+      if (error) throw error;
+      return data.map((r) => r.profile_id);
+    },
+  });
+
+  const conflicts = useQuery({
+    queryKey: ["day-gear-conflicts", dayId, day.data?.shoot_date, crewIds.join(",")],
+    enabled: !!day.data?.shoot_date && crewIds.length > 0 && (gear.data?.length ?? 0) > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("equipment_conflicts_on", {
+        _date: day.data!.shoot_date,
+        _ids: (gear.data ?? []).map((g) => g.id),
+      });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+
   const selected = useQuery({
     queryKey: ["day-gear", dayId],
     queryFn: async () => {
