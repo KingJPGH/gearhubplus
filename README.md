@@ -1,13 +1,6 @@
 # Crew Gear Hub
 
 Hub organisationnel pour l'équipement d'une boite de production
-.
-
-
-
-Donc l'administrateur du projet poiur la vie crée des dates de tournage et pour chaque date, il choisit l'équipement nécessaire via chaque profil des membre de lequipe associé à la journée.  L'administrateur peut seulement choisi l'équipement mis disponible pas les membre de lequipe. 
-
-Une section équipement manquant ou demande spécial/notes est aussi disponible pour la journée de tournage.
 
 This project was built with [Lovable](https://lovable.dev).
 
