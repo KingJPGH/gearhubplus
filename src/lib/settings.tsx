@@ -2,9 +2,19 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 
 export type Theme = "light" | "dark";
 export type Lang = "fr" | "en";
+export type ColorTheme = "neon" | "ocean" | "sunset" | "forest" | "mono";
+
+export const COLOR_THEMES: { value: ColorTheme; label: { fr: string; en: string }; swatch: string[] }[] = [
+  { value: "neon", label: { fr: "Néon studio", en: "Neon studio" }, swatch: ["#6d5efc", "#22b8cf", "#37d67a"] },
+  { value: "ocean", label: { fr: "Océan", en: "Ocean" }, swatch: ["#1d7fd6", "#12b6b6", "#5ec8f5"] },
+  { value: "sunset", label: { fr: "Coucher de soleil", en: "Sunset" }, swatch: ["#f2683c", "#f5a524", "#e8467c"] },
+  { value: "forest", label: { fr: "Forêt", en: "Forest" }, swatch: ["#2f9e59", "#7cb518", "#0f8a7a"] },
+  { value: "mono", label: { fr: "Graphite", en: "Graphite" }, swatch: ["#4a5568", "#8a94a6", "#2d3542"] },
+];
 
 const THEME_KEY = "plateau.theme";
 const LANG_KEY = "plateau.lang";
+const COLOR_KEY = "plateau.color";
 
 type Dict = Record<string, { fr: string; en: string }>;
 
@@ -12,6 +22,7 @@ export const DICT: Dict = {
   // shell / nav
   "nav.companies": { fr: "Entreprises", en: "Companies" },
   "nav.inventory": { fr: "Inventaire", en: "Inventory" },
+  "nav.kits": { fr: "Kits", en: "Kits" },
   "nav.settings": { fr: "Paramètres", en: "Settings" },
   "nav.signout": { fr: "Déconnexion", en: "Sign out" },
 
@@ -36,6 +47,11 @@ export const DICT: Dict = {
   "settings.french": { fr: "Français", en: "French" },
   "settings.english": { fr: "Anglais", en: "English" },
   "settings.saved": { fr: "Préférences enregistrées sur cet appareil.", en: "Preferences saved on this device." },
+  "settings.palette": { fr: "Thème de couleurs", en: "Color theme" },
+  "settings.palette.hint": {
+    fr: "Change les couleurs d'accent de toute l'application.",
+    en: "Changes the accent colors across the whole app.",
+  },
 
   // landing
   "landing.kicker": {
@@ -92,8 +108,10 @@ export const DICT: Dict = {
 type Ctx = {
   theme: Theme;
   lang: Lang;
+  colorTheme: ColorTheme;
   setTheme: (t: Theme) => void;
   setLang: (l: Lang) => void;
+  setColorTheme: (c: ColorTheme) => void;
   t: (key: keyof typeof DICT | string) => string;
 };
 
@@ -102,20 +120,27 @@ const SettingsContext = createContext<Ctx | null>(null);
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("light");
   const [lang, setLangState] = useState<Lang>("fr");
+  const [colorTheme, setColorThemeState] = useState<ColorTheme>("neon");
 
   useEffect(() => {
     const storedTheme = localStorage.getItem(THEME_KEY) as Theme | null;
     const storedLang = localStorage.getItem(LANG_KEY) as Lang | null;
+    const storedColor = localStorage.getItem(COLOR_KEY) as ColorTheme | null;
     const prefersDark =
       !storedTheme && window.matchMedia?.("(prefers-color-scheme: dark)").matches;
     setThemeState(storedTheme ?? (prefersDark ? "dark" : "light"));
     if (storedLang) setLangState(storedLang);
+    if (storedColor) setColorThemeState(storedColor);
   }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     document.documentElement.style.colorScheme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", colorTheme);
+  }, [colorTheme]);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -125,6 +150,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     () => ({
       theme,
       lang,
+      colorTheme,
       setTheme: (t) => {
         localStorage.setItem(THEME_KEY, t);
         setThemeState(t);
@@ -133,9 +159,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(LANG_KEY, l);
         setLangState(l);
       },
+      setColorTheme: (c) => {
+        localStorage.setItem(COLOR_KEY, c);
+        setColorThemeState(c);
+      },
       t: (key) => DICT[key]?.[lang] ?? String(key),
     }),
-    [theme, lang],
+    [theme, lang, colorTheme],
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
