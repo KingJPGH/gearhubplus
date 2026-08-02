@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Moon, Sun, Languages } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { useSettings } from "@/lib/settings";
+import { COLOR_THEMES, useSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/parametres")({
