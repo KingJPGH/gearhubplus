@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Clapperboard, Boxes, LayoutGrid, LogOut, Settings, ShieldCheck } from "lucide-react";
+import { Clapperboard, Boxes, LayoutGrid, LogOut, PackagePlus, Settings, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSuperAdmin } from "@/lib/roles";
