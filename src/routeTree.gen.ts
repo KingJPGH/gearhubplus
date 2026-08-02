@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSuperAdminRouteImport } from './routes/_authenticated/super-admin'
 import { Route as AuthenticatedParametresRouteImport } from './routes/_authenticated/parametres'
+import { Route as AuthenticatedKitsRouteImport } from './routes/_authenticated/kits'
 import { Route as AuthenticatedEquipementRouteImport } from './routes/_authenticated/equipement'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
@@ -48,6 +49,11 @@ const AuthenticatedSuperAdminRoute = AuthenticatedSuperAdminRouteImport.update({
 const AuthenticatedParametresRoute = AuthenticatedParametresRouteImport.update({
   id: '/parametres',
   path: '/parametres',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedKitsRoute = AuthenticatedKitsRouteImport.update({
+  id: '/kits',
+  path: '/kits',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedEquipementRoute = AuthenticatedEquipementRouteImport.update({
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipement': typeof AuthenticatedEquipementRoute
+  '/kits': typeof AuthenticatedKitsRoute
   '/parametres': typeof AuthenticatedParametresRoute
   '/super-admin': typeof AuthenticatedSuperAdminRoute
   '/companies/$companyId': typeof AuthenticatedCompaniesCompanyIdRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/equipement': typeof AuthenticatedEquipementRoute
+  '/kits': typeof AuthenticatedKitsRoute
   '/parametres': typeof AuthenticatedParametresRoute
   '/super-admin': typeof AuthenticatedSuperAdminRoute
   '/companies/$companyId': typeof AuthenticatedCompaniesCompanyIdRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/equipement': typeof AuthenticatedEquipementRoute
+  '/_authenticated/kits': typeof AuthenticatedKitsRoute
   '/_authenticated/parametres': typeof AuthenticatedParametresRoute
   '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRoute
   '/_authenticated/companies/$companyId': typeof AuthenticatedCompaniesCompanyIdRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/dashboard'
     | '/equipement'
+    | '/kits'
     | '/parametres'
     | '/super-admin'
     | '/companies/$companyId'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/dashboard'
     | '/equipement'
+    | '/kits'
     | '/parametres'
     | '/super-admin'
     | '/companies/$companyId'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/dashboard'
     | '/_authenticated/equipement'
+    | '/_authenticated/kits'
     | '/_authenticated/parametres'
     | '/_authenticated/super-admin'
     | '/_authenticated/companies/$companyId'
@@ -207,6 +219,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedParametresRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/kits': {
+      id: '/_authenticated/kits'
+      path: '/kits'
+      fullPath: '/kits'
+      preLoaderRoute: typeof AuthenticatedKitsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/equipement': {
       id: '/_authenticated/equipement'
       path: '/equipement'
@@ -248,6 +267,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEquipementRoute: typeof AuthenticatedEquipementRoute
+  AuthenticatedKitsRoute: typeof AuthenticatedKitsRoute
   AuthenticatedParametresRoute: typeof AuthenticatedParametresRoute
   AuthenticatedSuperAdminRoute: typeof AuthenticatedSuperAdminRoute
   AuthenticatedCompaniesCompanyIdRoute: typeof AuthenticatedCompaniesCompanyIdRoute
@@ -258,6 +278,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEquipementRoute: AuthenticatedEquipementRoute,
+  AuthenticatedKitsRoute: AuthenticatedKitsRoute,
   AuthenticatedParametresRoute: AuthenticatedParametresRoute,
   AuthenticatedSuperAdminRoute: AuthenticatedSuperAdminRoute,
   AuthenticatedCompaniesCompanyIdRoute: AuthenticatedCompaniesCompanyIdRoute,

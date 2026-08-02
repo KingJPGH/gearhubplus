@@ -10,8 +10,10 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { to: "/dashboard", key: "nav.companies", icon: LayoutGrid },
   { to: "/equipement", key: "nav.inventory", icon: Boxes },
+  { to: "/kits", key: "nav.kits", icon: PackagePlus },
   { to: "/parametres", key: "nav.settings", icon: Settings },
 ] as const;
+
 
 
 export function AppShell({
