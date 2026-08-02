@@ -152,18 +152,34 @@ function DayPage() {
     },
   });
 
+  const kits = useQuery({
+    queryKey: ["day-kits", crewIds.join(",")],
+    enabled: crewIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("kits")
+        .select("id, name, owner_id, kit_items(equipment_id)")
+        .in("owner_id", crewIds)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const selected = useQuery({
     queryKey: ["day-gear", dayId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shoot_day_equipment")
-        .select("id, equipment_id, owner_id, equipment(name, category, serial_number, quantity)")
+        .select(
+          "id, equipment_id, owner_id, equipment(name, category, serial_number, quantity, notes)",
+        )
         .eq("shoot_day_id", dayId);
       if (error) throw error;
       return data;
     },
   });
+
 
   const requests = useQuery({
     queryKey: ["day-requests", dayId],
