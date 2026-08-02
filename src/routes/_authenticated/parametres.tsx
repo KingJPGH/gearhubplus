@@ -46,11 +46,12 @@ function OptionCard({
 }
 
 function SettingsPage() {
-  const { theme, lang, setTheme, setLang, t } = useSettings();
+  const { theme, lang, colorTheme, setTheme, setLang, setColorTheme, t } = useSettings();
 
   return (
     <AppShell title={t("settings.title")} subtitle={t("settings.subtitle")}>
       <div className="grid gap-4 md:grid-cols-2">
+
         <section className="panel p-6">
           <p className="label-tech">{t("settings.appearance")}</p>
           <p className="mt-2 text-sm text-muted-foreground">{t("settings.appearance.hint")}</p>
