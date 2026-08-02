@@ -90,7 +90,44 @@ function SettingsPage() {
           </div>
         </section>
       </div>
+
+      <section className="panel mt-4 p-6">
+        <p className="label-tech">{t("settings.palette")}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{t("settings.palette.hint")}</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {COLOR_THEMES.map((themeOption) => (
+            <button
+              key={themeOption.value}
+              onClick={() => setColorTheme(themeOption.value)}
+              className={cn(
+                "rounded-2xl border p-4 text-left transition-all",
+                colorTheme === themeOption.value
+                  ? "border-brand bg-brand-soft shadow-glow"
+                  : "border-border bg-card hover:border-brand/40",
+              )}
+            >
+              <span className="flex gap-1.5">
+                {themeOption.swatch.map((color) => (
+                  <span
+                    key={color}
+                    className="size-6 rounded-full border border-border"
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </span>
+              <span className="mt-3 block text-sm font-medium">{themeOption.label[lang]}</span>
+              {colorTheme === themeOption.value ? (
+                <span className="label-tech mt-1 block text-brand">
+                  {lang === "fr" ? "Actif" : "Active"}
+                </span>
+              ) : null}
+            </button>
+          ))}
+        </div>
+      </section>
+
       <p className="mt-4 text-xs text-muted-foreground">{t("settings.saved")}</p>
     </AppShell>
   );
 }
+
