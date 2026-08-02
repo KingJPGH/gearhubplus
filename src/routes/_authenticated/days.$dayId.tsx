@@ -477,10 +477,28 @@ function DayPage() {
               {poolByOwner.length ? (
                 poolByOwner.map(([ownerId, items]) => (
                   <div key={ownerId} className="panel overflow-hidden">
-                    <div className="flex items-center justify-between border-b border-border bg-accent/60 px-3 py-2">
-                      <p className="text-sm font-medium">{nameFor(ownerId)}</p>
-                      <span className="label-tech">{items.length} dispo.</span>
+                    <div className="border-b border-border bg-accent/60 px-3 py-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{nameFor(ownerId)}</p>
+                        <span className="label-tech">{items.length} dispo.</span>
+                      </div>
+                      {isAdmin && kitsByOwner(ownerId).length ? (
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          <span className="label-tech">Kits :</span>
+                          {kitsByOwner(ownerId).map((kit) => (
+                            <button
+                              key={kit.id}
+                              onClick={() => addKit.mutate({ kitId: kit.id, ownerId })}
+                              disabled={addKit.isPending}
+                              className="inline-flex items-center gap-1 rounded-full border border-brand/40 bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-brand transition-transform hover:-translate-y-px disabled:opacity-60"
+                            >
+                              <PackagePlus className="size-3.5" /> {kit.name}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
+
                     <div className="divide-y divide-border">
                       {groupByCategory(items, (i) => i.category).map(([category, catItems]) => (
                         <div key={category}>
