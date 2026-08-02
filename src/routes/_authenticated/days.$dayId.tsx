@@ -19,12 +19,12 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/days/$dayId")({
   head: () => ({
     meta: [
-      { title: "Journée de tournage — Plateau" },
+      { title: "Journée de tournage — GearUp" },
       {
         name: "description",
         content: "Équipe présente, équipement à apporter et demandes spéciales de la journée.",
       },
-      { property: "og:title", content: "Journée de tournage — Plateau" },
+      { property: "og:title", content: "Journée de tournage — GearUp" },
       { property: "og:description", content: "Équipement et notes de la journée de tournage." },
     ],
   }),

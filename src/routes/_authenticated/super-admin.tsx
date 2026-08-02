@@ -10,16 +10,16 @@ import { useIsSuperAdmin } from "@/lib/roles";
 export const Route = createFileRoute("/_authenticated/super-admin")({
   head: () => ({
     meta: [
-      { title: "Super administration — Plateau" },
+      { title: "Super administration — GearUp" },
       {
         name: "description",
         content:
           "Vue globale des entreprises, membres, projets et journées de tournage de l'application.",
       },
-      { property: "og:title", content: "Super administration — Plateau" },
+      { property: "og:title", content: "Super administration — GearUp" },
       {
         property: "og:description",
-        content: "Contrôle total sur toutes les données de Plateau.",
+        content: "Contrôle total sur toutes les données de GearUp.",
       },
     ],
   }),

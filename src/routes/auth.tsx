@@ -9,12 +9,12 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Connexion — Plateau" },
+      { title: "Connexion — GearUp" },
       {
         name: "description",
         content: "Connectez-vous au hub d'équipement de votre boîte de production.",
       },
-      { property: "og:title", content: "Connexion — Plateau" },
+      { property: "og:title", content: "Connexion — GearUp" },
       { property: "og:description", content: "Accédez à votre hub d'équipement de production." },
     ],
   }),
@@ -82,7 +82,7 @@ function AuthPage() {
           <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Camera className="size-4" />
           </span>
-          <span className="font-display text-sm font-semibold">Plateau</span>
+          <span className="font-display text-sm font-semibold">GearUp</span>
         </Link>
       </div>
 

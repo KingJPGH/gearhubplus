@@ -28,12 +28,12 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/equipement")({
   head: () => ({
     meta: [
-      { title: "Mon équipement — Plateau" },
+      { title: "Mon équipement — GearUp" },
       {
         name: "description",
         content: "Déclarez votre matériel, sa quantité et ses dates d'indisponibilité.",
       },
-      { property: "og:title", content: "Mon équipement — Plateau" },
+      { property: "og:title", content: "Mon équipement — GearUp" },
       {
         property: "og:description",
         content: "Votre inventaire personnel de matériel de production.",

@@ -49,7 +49,7 @@ export function AppShell({
             <span className="flex size-9 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-tint-4 text-brand-foreground shadow-glow">
               <Clapperboard className="size-4" />
             </span>
-            <span className="font-display text-base font-bold tracking-tight">Plateau</span>
+            <span className="font-display text-base font-bold tracking-tight">GearUp</span>
           </Link>
           <nav className="flex items-center gap-1 overflow-x-auto">
             {NAV.map((item) => (

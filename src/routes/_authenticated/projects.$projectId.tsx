@@ -10,9 +10,9 @@ import { useIsSuperAdmin } from "@/lib/roles";
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   head: () => ({
     meta: [
-      { title: "Projet — Plateau" },
+      { title: "Projet — GearUp" },
       { name: "description", content: "Équipe et journées de tournage du projet." },
-      { property: "og:title", content: "Projet — Plateau" },
+      { property: "og:title", content: "Projet — GearUp" },
       { property: "og:description", content: "Équipe et journées de tournage du projet." },
     ],
   }),

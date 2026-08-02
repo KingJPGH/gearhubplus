@@ -18,8 +18,8 @@ export const DICT: Dict = {
   // settings
   "settings.title": { fr: "Paramètres", en: "Settings" },
   "settings.subtitle": {
-    fr: "Personnalisez l'apparence et la langue de Plateau.",
-    en: "Customize the look and language of Plateau.",
+    fr: "Personnalisez l'apparence et la langue de GearUp.",
+    en: "Customize the look and language of GearUp.",
   },
   "settings.appearance": { fr: "Apparence", en: "Appearance" },
   "settings.appearance.hint": {

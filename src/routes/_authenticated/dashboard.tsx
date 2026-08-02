@@ -11,9 +11,9 @@ import { useIsSuperAdmin } from "@/lib/roles";
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Entreprises — Plateau" },
+      { title: "Entreprises — GearUp" },
       { name: "description", content: "Vos entreprises de production et vos projets actifs." },
-      { property: "og:title", content: "Entreprises — Plateau" },
+      { property: "og:title", content: "Entreprises — GearUp" },
       { property: "og:description", content: "Vos entreprises de production et vos projets." },
     ],
   }),

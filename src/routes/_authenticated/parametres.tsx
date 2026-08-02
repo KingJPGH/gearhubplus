@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/parametres")({
   head: () => ({
     meta: [
-      { title: "Paramètres — Plateau" },
-      { name: "description", content: "Thème sombre ou lumineux et langue de l'interface Plateau." },
-      { property: "og:title", content: "Paramètres — Plateau" },
+      { title: "Paramètres — GearUp" },
+      { name: "description", content: "Thème sombre ou lumineux et langue de l'interface GearUp." },
+      { property: "og:title", content: "Paramètres — GearUp" },
       { property: "og:description", content: "Choisissez votre thème et votre langue." },
     ],
   }),
