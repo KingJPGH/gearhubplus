@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, ClipboardList, Plus, X } from "lucide-react";
+import { Check, ClipboardList, PackagePlus, Plus, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import {
   Dialog,
@@ -296,6 +296,40 @@ function DayPage() {
     return null;
   };
 
+  const kitsByOwner = (ownerId: string) =>
+    (kits.data ?? []).filter((kit) => kit.owner_id === ownerId);
+
+  const addKit = useMutation({
+    mutationFn: async ({ kitId, ownerId }: { kitId: string; ownerId: string }) => {
+      const kit = (kits.data ?? []).find((k) => k.id === kitId);
+      const kitEquipmentIds = new Set(
+        ((kit?.kit_items ?? []) as Array<{ equipment_id: string }>).map((i) => i.equipment_id),
+      );
+      const rows = (gear.data ?? [])
+        .filter(
+          (item) =>
+            kitEquipmentIds.has(item.id) && !selectedIds.has(item.id) && !blockReason(item),
+        )
+        .map((item) => ({
+          shoot_day_id: dayId,
+          equipment_id: item.id,
+          owner_id: ownerId,
+        }));
+      if (!rows.length) {
+        throw new Error("Aucun objet de ce kit n'est disponible pour cette journée.");
+      }
+      const { error } = await supabase.from("shoot_day_equipment").insert(rows);
+      if (error) throw error;
+      return rows.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ["day-gear", dayId] });
+      toast.success(`${count} objet(s) ajouté(s) depuis le kit`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   const poolByOwner = Object.entries(
     (gear.data ?? [])
       .filter((item) => !selectedIds.has(item.id))
@@ -327,7 +361,9 @@ function DayPage() {
       category: string | null;
       serial_number: string | null;
       quantity: number;
+      notes: string | null;
     } | null;
+
 
 
   const dateLabel = day.data
