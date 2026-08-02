@@ -515,12 +515,14 @@ function EditRow({
     category: string | null;
     quantity: number;
     serial_number: string | null;
+    notes: string | null;
   };
   onSave: (values: {
     name: string;
     category: string;
     quantity: number;
     serial_number: string | null;
+    notes: string | null;
   }) => void;
   onCancel: () => void;
 }) {
@@ -529,71 +531,84 @@ function EditRow({
     category: item.category ?? EQUIPMENT_CATEGORIES[0].value,
     quantity: item.quantity,
     serial: item.serial_number ?? "",
+    notes: item.notes ?? "",
   });
 
   return (
-    <div className="grid w-full gap-2 sm:grid-cols-[2fr_1.2fr_0.7fr_1fr_auto_auto]">
-      <input
-        value={draft.name}
-        onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-        maxLength={100}
-        className={inputClass}
+    <div className="w-full space-y-2">
+      <div className="grid w-full gap-2 sm:grid-cols-[2fr_1.2fr_0.7fr_1fr_auto_auto]">
+        <input
+          value={draft.name}
+          onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+          maxLength={100}
+          className={inputClass}
+        />
+        <Select value={draft.category} onValueChange={(v) => setDraft({ ...draft, category: v })}>
+          <SelectTrigger className="bg-background">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="pointer-events-auto">
+            {EQUIPMENT_CATEGORIES.map((c) => (
+              <SelectItem key={c.value} value={c.value}>
+                {c.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={String(draft.quantity)}
+          onValueChange={(v) => setDraft({ ...draft, quantity: Number(v) })}
+        >
+          <SelectTrigger className="bg-background">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="pointer-events-auto max-h-64">
+            {QUANTITY_OPTIONS.map((n) => (
+              <SelectItem key={n} value={String(n)}>
+                {n}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <input
+          value={draft.serial}
+          onChange={(e) => setDraft({ ...draft, serial: e.target.value })}
+          placeholder="N° de série"
+          maxLength={60}
+          className={inputClass}
+        />
+        <button
+          onClick={() =>
+            draft.name.trim() &&
+            onSave({
+              name: draft.name.trim(),
+              category: draft.category,
+              quantity: draft.quantity,
+              serial_number: draft.serial.trim() || null,
+              notes: draft.notes.trim() || null,
+            })
+          }
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-brand-foreground"
+        >
+          <Check className="size-4" /> Enregistrer
+        </button>
+        <button
+          onClick={onCancel}
+          className="inline-flex items-center justify-center rounded-lg border border-input px-3 py-2 text-sm text-muted-foreground"
+          aria-label="Annuler"
+        >
+          <X className="size-4" />
+        </button>
+      </div>
+      <textarea
+        value={draft.notes}
+        onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
+        placeholder="Commentaires / détails (état, accessoires inclus, précautions…)"
+        maxLength={1000}
+        rows={2}
+        className={cn(inputClass, "w-full")}
       />
-      <Select value={draft.category} onValueChange={(v) => setDraft({ ...draft, category: v })}>
-        <SelectTrigger className="bg-background">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="pointer-events-auto">
-          {EQUIPMENT_CATEGORIES.map((c) => (
-            <SelectItem key={c.value} value={c.value}>
-              {c.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select
-        value={String(draft.quantity)}
-        onValueChange={(v) => setDraft({ ...draft, quantity: Number(v) })}
-      >
-        <SelectTrigger className="bg-background">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="pointer-events-auto max-h-64">
-          {QUANTITY_OPTIONS.map((n) => (
-            <SelectItem key={n} value={String(n)}>
-              {n}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <input
-        value={draft.serial}
-        onChange={(e) => setDraft({ ...draft, serial: e.target.value })}
-        placeholder="N° de série"
-        maxLength={60}
-        className={inputClass}
-      />
-      <button
-        onClick={() =>
-          draft.name.trim() &&
-          onSave({
-            name: draft.name.trim(),
-            category: draft.category,
-            quantity: draft.quantity,
-            serial_number: draft.serial.trim() || null,
-          })
-        }
-        className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-brand-foreground"
-      >
-        <Check className="size-4" /> Enregistrer
-      </button>
-      <button
-        onClick={onCancel}
-        className="inline-flex items-center justify-center rounded-lg border border-input px-3 py-2 text-sm text-muted-foreground"
-        aria-label="Annuler"
-      >
-        <X className="size-4" />
-      </button>
     </div>
   );
 }
+
