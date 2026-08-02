@@ -1,15 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Moon, Sun, Languages } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { useSettings } from "@/lib/settings";
+import { COLOR_THEMES, useSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/parametres")({
   head: () => ({
     meta: [
-      { title: "Paramètres — Plateau" },
-      { name: "description", content: "Thème sombre ou lumineux et langue de l'interface Plateau." },
-      { property: "og:title", content: "Paramètres — Plateau" },
+      { title: "Paramètres — GearUp" },
+      { name: "description", content: "Thème sombre ou lumineux et langue de l'interface GearUp." },
+      { property: "og:title", content: "Paramètres — GearUp" },
       { property: "og:description", content: "Choisissez votre thème et votre langue." },
     ],
   }),
@@ -46,11 +46,12 @@ function OptionCard({
 }
 
 function SettingsPage() {
-  const { theme, lang, setTheme, setLang, t } = useSettings();
+  const { theme, lang, colorTheme, setTheme, setLang, setColorTheme, t } = useSettings();
 
   return (
     <AppShell title={t("settings.title")} subtitle={t("settings.subtitle")}>
       <div className="grid gap-4 md:grid-cols-2">
+
         <section className="panel p-6">
           <p className="label-tech">{t("settings.appearance")}</p>
           <p className="mt-2 text-sm text-muted-foreground">{t("settings.appearance.hint")}</p>
@@ -89,7 +90,44 @@ function SettingsPage() {
           </div>
         </section>
       </div>
+
+      <section className="panel mt-4 p-6">
+        <p className="label-tech">{t("settings.palette")}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{t("settings.palette.hint")}</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {COLOR_THEMES.map((themeOption) => (
+            <button
+              key={themeOption.value}
+              onClick={() => setColorTheme(themeOption.value)}
+              className={cn(
+                "rounded-2xl border p-4 text-left transition-all",
+                colorTheme === themeOption.value
+                  ? "border-brand bg-brand-soft shadow-glow"
+                  : "border-border bg-card hover:border-brand/40",
+              )}
+            >
+              <span className="flex gap-1.5">
+                {themeOption.swatch.map((color) => (
+                  <span
+                    key={color}
+                    className="size-6 rounded-full border border-border"
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </span>
+              <span className="mt-3 block text-sm font-medium">{themeOption.label[lang]}</span>
+              {colorTheme === themeOption.value ? (
+                <span className="label-tech mt-1 block text-brand">
+                  {lang === "fr" ? "Actif" : "Active"}
+                </span>
+              ) : null}
+            </button>
+          ))}
+        </div>
+      </section>
+
       <p className="mt-4 text-xs text-muted-foreground">{t("settings.saved")}</p>
     </AppShell>
   );
 }
+

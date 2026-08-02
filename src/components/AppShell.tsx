@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Clapperboard, Boxes, LayoutGrid, LogOut, Settings, ShieldCheck } from "lucide-react";
+import { Clapperboard, Boxes, LayoutGrid, LogOut, PackagePlus, Settings, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSuperAdmin } from "@/lib/roles";
@@ -10,8 +10,10 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { to: "/dashboard", key: "nav.companies", icon: LayoutGrid },
   { to: "/equipement", key: "nav.inventory", icon: Boxes },
+  { to: "/kits", key: "nav.kits", icon: PackagePlus },
   { to: "/parametres", key: "nav.settings", icon: Settings },
 ] as const;
+
 
 
 export function AppShell({
@@ -49,7 +51,7 @@ export function AppShell({
             <span className="flex size-9 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-tint-4 text-brand-foreground shadow-glow">
               <Clapperboard className="size-4" />
             </span>
-            <span className="font-display text-base font-bold tracking-tight">Plateau</span>
+            <span className="font-display text-base font-bold tracking-tight">GearUp</span>
           </Link>
           <nav className="flex items-center gap-1 overflow-x-auto">
             {NAV.map((item) => (

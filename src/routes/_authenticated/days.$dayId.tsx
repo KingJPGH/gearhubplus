@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, ClipboardList, Plus, X } from "lucide-react";
+import { Check, ClipboardList, PackagePlus, Plus, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import {
   Dialog,
@@ -19,12 +19,12 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/days/$dayId")({
   head: () => ({
     meta: [
-      { title: "Journée de tournage — Plateau" },
+      { title: "Journée de tournage — GearUp" },
       {
         name: "description",
         content: "Équipe présente, équipement à apporter et demandes spéciales de la journée.",
       },
-      { property: "og:title", content: "Journée de tournage — Plateau" },
+      { property: "og:title", content: "Journée de tournage — GearUp" },
       { property: "og:description", content: "Équipement et notes de la journée de tournage." },
     ],
   }),
@@ -152,18 +152,34 @@ function DayPage() {
     },
   });
 
+  const kits = useQuery({
+    queryKey: ["day-kits", crewIds.join(",")],
+    enabled: crewIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("kits")
+        .select("id, name, owner_id, kit_items(equipment_id)")
+        .in("owner_id", crewIds)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const selected = useQuery({
     queryKey: ["day-gear", dayId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shoot_day_equipment")
-        .select("id, equipment_id, owner_id, equipment(name, category, serial_number, quantity)")
+        .select(
+          "id, equipment_id, owner_id, equipment(name, category, serial_number, quantity, notes)",
+        )
         .eq("shoot_day_id", dayId);
       if (error) throw error;
       return data;
     },
   });
+
 
   const requests = useQuery({
     queryKey: ["day-requests", dayId],
@@ -280,6 +296,40 @@ function DayPage() {
     return null;
   };
 
+  const kitsByOwner = (ownerId: string) =>
+    (kits.data ?? []).filter((kit) => kit.owner_id === ownerId);
+
+  const addKit = useMutation({
+    mutationFn: async ({ kitId, ownerId }: { kitId: string; ownerId: string }) => {
+      const kit = (kits.data ?? []).find((k) => k.id === kitId);
+      const kitEquipmentIds = new Set(
+        ((kit?.kit_items ?? []) as Array<{ equipment_id: string }>).map((i) => i.equipment_id),
+      );
+      const rows = (gear.data ?? [])
+        .filter(
+          (item) =>
+            kitEquipmentIds.has(item.id) && !selectedIds.has(item.id) && !blockReason(item),
+        )
+        .map((item) => ({
+          shoot_day_id: dayId,
+          equipment_id: item.id,
+          owner_id: ownerId,
+        }));
+      if (!rows.length) {
+        throw new Error("Aucun objet de ce kit n'est disponible pour cette journée.");
+      }
+      const { error } = await supabase.from("shoot_day_equipment").insert(rows);
+      if (error) throw error;
+      return rows.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ["day-gear", dayId] });
+      toast.success(`${count} objet(s) ajouté(s) depuis le kit`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   const poolByOwner = Object.entries(
     (gear.data ?? [])
       .filter((item) => !selectedIds.has(item.id))
@@ -311,7 +361,9 @@ function DayPage() {
       category: string | null;
       serial_number: string | null;
       quantity: number;
+      notes: string | null;
     } | null;
+
 
 
   const dateLabel = day.data
@@ -362,50 +414,92 @@ function DayPage() {
             <div className="space-y-4">
               {selectedByOwner.length ? (
                 selectedByOwner.map(([ownerId, rows]) => (
-                  <div key={ownerId} className="rounded-xl border border-border p-3">
-                    <p className="mb-2 text-sm font-semibold">
-                      {nameFor(ownerId)}{" "}
-                      <span className="text-muted-foreground">— {rows.length} item(s)</span>
-                    </p>
-                    {groupByCategory(rows, (r) => equipmentOf(r)?.category).map(
-                      ([category, catRows]) => (
-                        <div key={category} className="mt-2">
-                          <p className="label-tech">{category}</p>
-                          <ul className="mt-1 space-y-0.5 text-sm">
-                            {catRows.map((r) => {
-                              const eq = equipmentOf(r);
-                              return (
-                                <li key={r.id}>
-                                  • {eq?.name} ×{eq?.quantity ?? 1}
-                                  {eq?.serial_number ? ` (${eq.serial_number})` : ""}
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                      ),
-                    )}
+                  <div
+                    key={ownerId}
+                    className="overflow-hidden rounded-xl border border-brand/30 border-l-4 border-l-brand"
+                  >
+                    <div className="flex items-center justify-between bg-brand-soft px-3 py-2">
+                      <p className="text-sm font-semibold text-brand">{nameFor(ownerId)}</p>
+                      <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-semibold text-brand-foreground">
+                        {rows.length} item(s)
+                      </span>
+                    </div>
+                    <div className="divide-y divide-border">
+                      {groupByCategory(rows, (r) => equipmentOf(r)?.category).map(
+                        ([category, catRows]) => (
+                          <div key={category} className="p-3">
+                            <span
+                              className={cn(
+                                "rounded-full border px-2 py-0.5 text-[11px] font-semibold",
+                                categoryChipClass(category),
+                              )}
+                            >
+                              {category} · {catRows.length}
+                            </span>
+                            <ul className="mt-2 space-y-1.5 text-sm">
+                              {catRows.map((r) => {
+                                const eq = equipmentOf(r);
+                                return (
+                                  <li key={r.id} className="flex flex-wrap items-baseline gap-x-2">
+                                    <span className="font-medium">{eq?.name}</span>
+                                    <span className="rounded-full border border-border bg-muted px-1.5 text-[11px] text-muted-foreground">
+                                      ×{eq?.quantity ?? 1}
+                                    </span>
+                                    {eq?.serial_number ? (
+                                      <span className="label-tech">{eq.serial_number}</span>
+                                    ) : null}
+                                    {eq?.notes ? (
+                                      <span className="w-full text-xs text-muted-foreground">
+                                        {eq.notes}
+                                      </span>
+                                    ) : null}
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        ),
+                      )}
+                    </div>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground">Aucun équipement retenu.</p>
+                <p className="rounded-xl border border-dashed border-border p-3 text-sm text-muted-foreground">
+                  Aucun équipement retenu.
+                </p>
               )}
 
               {requests.data?.length ? (
-                <div className="rounded-xl border border-border p-3">
-                  <p className="mb-2 text-sm font-semibold">Notes et demandes spéciales</p>
-                  <ul className="space-y-1 text-sm">
+                <div className="overflow-hidden rounded-xl border border-tint-3/40 border-l-4 border-l-tint-3">
+                  <p className="bg-tint-3-soft px-3 py-2 text-sm font-semibold text-tint-3">
+                    Notes et demandes spéciales
+                  </p>
+                  <ul className="space-y-1.5 p-3 text-sm">
                     {requests.data.map((r) => (
-                      <li key={r.id} className={r.is_resolved ? "text-muted-foreground" : ""}>
-                        • {r.label}
-                        {r.details ? ` — ${r.details}` : ""}
-                        {r.is_resolved ? " (réglé)" : ""}
+                      <li key={r.id} className="flex flex-wrap items-baseline gap-2">
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                            r.is_resolved
+                              ? "bg-success/15 text-success"
+                              : "bg-destructive/15 text-destructive",
+                          )}
+                        >
+                          {r.is_resolved ? "Réglé" : "À faire"}
+                        </span>
+                        <span className={r.is_resolved ? "text-muted-foreground" : "font-medium"}>
+                          {r.label}
+                        </span>
+                        {r.details ? (
+                          <span className="w-full text-xs text-muted-foreground">{r.details}</span>
+                        ) : null}
                       </li>
                     ))}
                   </ul>
                 </div>
               ) : null}
             </div>
+
           </DialogContent>
         </Dialog>
       }
@@ -461,10 +555,28 @@ function DayPage() {
               {poolByOwner.length ? (
                 poolByOwner.map(([ownerId, items]) => (
                   <div key={ownerId} className="panel overflow-hidden">
-                    <div className="flex items-center justify-between border-b border-border bg-accent/60 px-3 py-2">
-                      <p className="text-sm font-medium">{nameFor(ownerId)}</p>
-                      <span className="label-tech">{items.length} dispo.</span>
+                    <div className="border-b border-border bg-accent/60 px-3 py-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">{nameFor(ownerId)}</p>
+                        <span className="label-tech">{items.length} dispo.</span>
+                      </div>
+                      {isAdmin && kitsByOwner(ownerId).length ? (
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          <span className="label-tech">Kits :</span>
+                          {kitsByOwner(ownerId).map((kit) => (
+                            <button
+                              key={kit.id}
+                              onClick={() => addKit.mutate({ kitId: kit.id, ownerId })}
+                              disabled={addKit.isPending}
+                              className="inline-flex items-center gap-1 rounded-full border border-brand/40 bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-brand transition-transform hover:-translate-y-px disabled:opacity-60"
+                            >
+                              <PackagePlus className="size-3.5" /> {kit.name}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
+
                     <div className="divide-y divide-border">
                       {groupByCategory(items, (i) => i.category).map(([category, catItems]) => (
                         <div key={category}>

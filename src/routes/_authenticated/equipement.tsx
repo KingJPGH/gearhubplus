@@ -28,12 +28,12 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/equipement")({
   head: () => ({
     meta: [
-      { title: "Mon équipement — Plateau" },
+      { title: "Mon équipement — GearUp" },
       {
         name: "description",
         content: "Déclarez votre matériel, sa quantité et ses dates d'indisponibilité.",
       },
-      { property: "og:title", content: "Mon équipement — Plateau" },
+      { property: "og:title", content: "Mon équipement — GearUp" },
       {
         property: "og:description",
         content: "Votre inventaire personnel de matériel de production.",
@@ -57,7 +57,9 @@ function EquipmentPage() {
     category: EQUIPMENT_CATEGORIES[0].value,
     quantity: 1,
     serial: "",
+    notes: "",
   });
+
 
   const me = useQuery({
     queryKey: ["me-id"],
@@ -150,16 +152,24 @@ function EquipmentPage() {
         category: form.category,
         quantity: form.quantity,
         serial_number: form.serial.trim() || null,
+        notes: form.notes.trim() || null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
-      setForm({ name: "", category: EQUIPMENT_CATEGORIES[0].value, quantity: 1, serial: "" });
+      setForm({
+        name: "",
+        category: EQUIPMENT_CATEGORIES[0].value,
+        quantity: 1,
+        serial: "",
+        notes: "",
+      });
       invalidate();
       toast.success("Équipement ajouté");
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const patch = useMutation({
     mutationFn: async ({
@@ -173,8 +183,10 @@ function EquipmentPage() {
         category?: string;
         name?: string;
         serial_number?: string | null;
+        notes?: string | null;
       };
     }) => {
+
       const { error } = await supabase.from("equipment").update(values).eq("id", id);
       if (error) throw error;
     },
@@ -368,7 +380,16 @@ function EquipmentPage() {
         >
           <Plus className="size-4" /> Ajouter
         </button>
+        <textarea
+          value={form.notes}
+          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          placeholder="Commentaires / détails (état, accessoires inclus, précautions…)"
+          maxLength={1000}
+          rows={2}
+          className={cn(inputClass, "sm:col-span-5")}
+        />
       </form>
+
 
       <div className="space-y-5">
         {equipment.isLoading ? (
@@ -433,7 +454,13 @@ function EquipmentPage() {
                           .filter(Boolean)
                           .join(" · ") || "Aucune indisponibilité"}
                       </p>
+                      {item.notes ? (
+                        <p className="mt-1.5 rounded-lg bg-muted px-2.5 py-1.5 text-xs text-muted-foreground">
+                          {item.notes}
+                        </p>
+                      ) : null}
                     </div>
+
 
                     <Popover>
                       <PopoverTrigger asChild>
@@ -515,12 +542,14 @@ function EditRow({
     category: string | null;
     quantity: number;
     serial_number: string | null;
+    notes: string | null;
   };
   onSave: (values: {
     name: string;
     category: string;
     quantity: number;
     serial_number: string | null;
+    notes: string | null;
   }) => void;
   onCancel: () => void;
 }) {
@@ -529,71 +558,84 @@ function EditRow({
     category: item.category ?? EQUIPMENT_CATEGORIES[0].value,
     quantity: item.quantity,
     serial: item.serial_number ?? "",
+    notes: item.notes ?? "",
   });
 
   return (
-    <div className="grid w-full gap-2 sm:grid-cols-[2fr_1.2fr_0.7fr_1fr_auto_auto]">
-      <input
-        value={draft.name}
-        onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-        maxLength={100}
-        className={inputClass}
+    <div className="w-full space-y-2">
+      <div className="grid w-full gap-2 sm:grid-cols-[2fr_1.2fr_0.7fr_1fr_auto_auto]">
+        <input
+          value={draft.name}
+          onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+          maxLength={100}
+          className={inputClass}
+        />
+        <Select value={draft.category} onValueChange={(v) => setDraft({ ...draft, category: v })}>
+          <SelectTrigger className="bg-background">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="pointer-events-auto">
+            {EQUIPMENT_CATEGORIES.map((c) => (
+              <SelectItem key={c.value} value={c.value}>
+                {c.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={String(draft.quantity)}
+          onValueChange={(v) => setDraft({ ...draft, quantity: Number(v) })}
+        >
+          <SelectTrigger className="bg-background">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="pointer-events-auto max-h-64">
+            {QUANTITY_OPTIONS.map((n) => (
+              <SelectItem key={n} value={String(n)}>
+                {n}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <input
+          value={draft.serial}
+          onChange={(e) => setDraft({ ...draft, serial: e.target.value })}
+          placeholder="N° de série"
+          maxLength={60}
+          className={inputClass}
+        />
+        <button
+          onClick={() =>
+            draft.name.trim() &&
+            onSave({
+              name: draft.name.trim(),
+              category: draft.category,
+              quantity: draft.quantity,
+              serial_number: draft.serial.trim() || null,
+              notes: draft.notes.trim() || null,
+            })
+          }
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-brand-foreground"
+        >
+          <Check className="size-4" /> Enregistrer
+        </button>
+        <button
+          onClick={onCancel}
+          className="inline-flex items-center justify-center rounded-lg border border-input px-3 py-2 text-sm text-muted-foreground"
+          aria-label="Annuler"
+        >
+          <X className="size-4" />
+        </button>
+      </div>
+      <textarea
+        value={draft.notes}
+        onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
+        placeholder="Commentaires / détails (état, accessoires inclus, précautions…)"
+        maxLength={1000}
+        rows={2}
+        className={cn(inputClass, "w-full")}
       />
-      <Select value={draft.category} onValueChange={(v) => setDraft({ ...draft, category: v })}>
-        <SelectTrigger className="bg-background">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="pointer-events-auto">
-          {EQUIPMENT_CATEGORIES.map((c) => (
-            <SelectItem key={c.value} value={c.value}>
-              {c.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select
-        value={String(draft.quantity)}
-        onValueChange={(v) => setDraft({ ...draft, quantity: Number(v) })}
-      >
-        <SelectTrigger className="bg-background">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="pointer-events-auto max-h-64">
-          {QUANTITY_OPTIONS.map((n) => (
-            <SelectItem key={n} value={String(n)}>
-              {n}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <input
-        value={draft.serial}
-        onChange={(e) => setDraft({ ...draft, serial: e.target.value })}
-        placeholder="N° de série"
-        maxLength={60}
-        className={inputClass}
-      />
-      <button
-        onClick={() =>
-          draft.name.trim() &&
-          onSave({
-            name: draft.name.trim(),
-            category: draft.category,
-            quantity: draft.quantity,
-            serial_number: draft.serial.trim() || null,
-          })
-        }
-        className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-brand-foreground"
-      >
-        <Check className="size-4" /> Enregistrer
-      </button>
-      <button
-        onClick={onCancel}
-        className="inline-flex items-center justify-center rounded-lg border border-input px-3 py-2 text-sm text-muted-foreground"
-        aria-label="Annuler"
-      >
-        <X className="size-4" />
-      </button>
     </div>
   );
 }
+

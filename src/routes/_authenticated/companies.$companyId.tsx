@@ -12,9 +12,9 @@ import { addCompanyMember, createOfflineMember } from "@/lib/team.functions";
 export const Route = createFileRoute("/_authenticated/companies/$companyId")({
   head: () => ({
     meta: [
-      { title: "Entreprise — Plateau" },
+      { title: "Entreprise — GearUp" },
       { name: "description", content: "Projets et membres de cette entreprise de production." },
-      { property: "og:title", content: "Entreprise — Plateau" },
+      { property: "og:title", content: "Entreprise — GearUp" },
       { property: "og:description", content: "Projets et membres de l'entreprise." },
     ],
   }),

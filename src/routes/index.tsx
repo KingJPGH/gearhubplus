@@ -5,13 +5,13 @@ import { useT } from "@/lib/settings";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Plateau — Hub d'équipement pour boîtes de production" },
+      { title: "GearUp — Hub d'équipement pour boîtes de production" },
       {
         name: "description",
         content:
           "Centralisez l'équipement de votre équipe : chaque membre déclare son matériel disponible, les admins l'assignent aux journées de tournage.",
       },
-      { property: "og:title", content: "Plateau — Hub d'équipement pour boîtes de production" },
+      { property: "og:title", content: "GearUp — Hub d'équipement pour boîtes de production" },
       {
         property: "og:description",
         content:
@@ -39,7 +39,7 @@ function Index() {
             <span className="flex size-9 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-tint-4 text-brand-foreground shadow-glow">
               <Clapperboard className="size-4" />
             </span>
-            <span className="font-display text-base font-bold tracking-tight">Plateau</span>
+            <span className="font-display text-base font-bold tracking-tight">GearUp</span>
           </div>
           <Link to="/auth" className="btn-brand px-4 py-2 text-sm">
             {t("landing.login")}
