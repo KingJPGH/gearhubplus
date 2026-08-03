@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Boxes, CalendarDays, ClipboardList, Clapperboard, ArrowRight } from "lucide-react";
+import { Boxes, CalendarDays, ClipboardList, ArrowRight } from "lucide-react";
+import { GearUpLogo } from "@/components/GearUpLogo";
 import { useT } from "@/lib/settings";
 
 export const Route = createFileRoute("/")({
