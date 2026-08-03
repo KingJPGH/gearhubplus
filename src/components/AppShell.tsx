@@ -49,10 +49,7 @@ export function AppShell({
       <header className="sticky top-0 z-30 border-b border-border bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
           <Link to="/dashboard" className="flex items-center gap-2">
-            <span className="flex size-9 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-tint-4 text-brand-foreground shadow-glow">
-              <Clapperboard className="size-4" />
-            </span>
-            <span className="font-display text-base font-bold tracking-tight">GearUp</span>
+            <GearUpLogo className="text-lg" />
           </Link>
           <nav className="flex items-center gap-1 overflow-x-auto">
             {NAV.map((item) => (
