@@ -2,7 +2,19 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, ClipboardList, PackagePlus, Plus, X } from "lucide-react";
+import {
+  Check,
+  CheckSquare,
+  ClipboardList,
+  FileText,
+  HardDriveDownload,
+  PackagePlus,
+  Plus,
+  Square,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import {
   Dialog,
