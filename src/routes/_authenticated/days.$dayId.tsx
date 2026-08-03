@@ -45,10 +45,36 @@ export const Route = createFileRoute("/_authenticated/days/$dayId")({
 
 type ProfileLite = { full_name: string | null; email: string | null; role_title: string | null };
 
+type WranglingStatus = "todo" | "done" | "na";
+
+const WRANGLING_OPTIONS: { value: WranglingStatus; label: string; on: string; off: string }[] = [
+  {
+    value: "todo",
+    label: "À faire",
+    on: "bg-destructive text-destructive-foreground border-destructive",
+    off: "border-destructive/40 text-destructive",
+  },
+  {
+    value: "done",
+    label: "Fait",
+    on: "bg-success text-white border-success",
+    off: "border-success/40 text-success",
+  },
+  {
+    value: "na",
+    label: "Ne s'applique pas",
+    on: "bg-muted text-foreground border-border",
+    off: "border-border text-muted-foreground",
+  },
+];
+
 function DayPage() {
   const { dayId } = Route.useParams();
   const queryClient = useQueryClient();
   const [request, setRequest] = useState({ label: "", details: "" });
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const toggleChecked = (key: string) => setChecked((c) => ({ ...c, [key]: !c[key] }));
+
 
   const day = useQuery({
     queryKey: ["shoot-day", dayId],
