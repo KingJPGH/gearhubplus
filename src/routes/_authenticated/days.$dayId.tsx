@@ -566,23 +566,40 @@ function DayPage() {
                             <ul className="mt-2 space-y-1.5 text-sm">
                               {catRows.map((r) => {
                                 const eq = equipmentOf(r);
+                                const done = !!checked[r.id];
                                 return (
-                                  <li key={r.id} className="flex flex-wrap items-baseline gap-x-2">
-                                    <span className="font-medium">{eq?.name}</span>
-                                    <span className="rounded-full border border-border bg-muted px-1.5 text-[11px] text-muted-foreground">
-                                      ×{eq?.quantity ?? 1}
-                                    </span>
-                                    {eq?.serial_number ? (
-                                      <span className="label-tech">{eq.serial_number}</span>
-                                    ) : null}
-                                    {eq?.notes ? (
-                                      <span className="w-full text-xs text-muted-foreground">
-                                        {eq.notes}
+                                  <li key={r.id}>
+                                    <button
+                                      onClick={() => toggleChecked(r.id)}
+                                      className={cn(
+                                        "flex w-full flex-wrap items-baseline gap-x-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-accent",
+                                        done && "opacity-60",
+                                      )}
+                                    >
+                                      {done ? (
+                                        <CheckSquare className="size-4 shrink-0 translate-y-0.5 text-success" />
+                                      ) : (
+                                        <Square className="size-4 shrink-0 translate-y-0.5 text-muted-foreground" />
+                                      )}
+                                      <span className={cn("font-medium", done && "line-through")}>
+                                        {eq?.name}
                                       </span>
-                                    ) : null}
+                                      <span className="rounded-full border border-border bg-muted px-1.5 text-[11px] text-muted-foreground">
+                                        ×{eq?.quantity ?? 1}
+                                      </span>
+                                      {eq?.serial_number ? (
+                                        <span className="label-tech">{eq.serial_number}</span>
+                                      ) : null}
+                                      {eq?.notes ? (
+                                        <span className="w-full text-xs text-muted-foreground">
+                                          {eq.notes}
+                                        </span>
+                                      ) : null}
+                                    </button>
                                   </li>
                                 );
                               })}
+
                             </ul>
                           </div>
                         ),
