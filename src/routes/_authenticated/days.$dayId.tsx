@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSuperAdmin } from "@/lib/roles";
+import { useSession } from "@/lib/session";
 import { categoryChipClass, groupByCategory } from "@/lib/equipment-categories";
 import { cn } from "@/lib/utils";
 
@@ -72,6 +73,7 @@ function DayPage() {
   const { dayId } = Route.useParams();
   const queryClient = useQueryClient();
   const [request, setRequest] = useState({ label: "", details: "" });
+  const { user } = useSession();
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const toggleChecked = (key: string) => setChecked((c) => ({ ...c, [key]: !c[key] }));
 
@@ -683,7 +685,7 @@ function DayPage() {
                   const status =
                     ((wrangling.data ?? []).find((w) => w.user_id === row.user_id)
                       ?.status as WranglingStatus) ?? "todo";
-                  const canEdit = isAdmin || row.user_id === session.data?.user?.id;
+                  const canEdit = isAdmin || row.user_id === user?.id;
                   return (
                     <div
                       key={row.user_id}
