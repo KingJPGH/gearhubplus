@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Camera } from "lucide-react";
+import { GearUpLogo } from "@/components/GearUpLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 
@@ -79,10 +79,7 @@ function AuthPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <div className="border-b border-border bg-card px-4 py-4">
         <Link to="/" className="mx-auto flex max-w-5xl items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Camera className="size-4" />
-          </span>
-          <span className="font-display text-sm font-semibold">GearUp</span>
+          <GearUpLogo />
         </Link>
       </div>
 
