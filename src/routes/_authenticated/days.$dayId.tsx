@@ -57,7 +57,7 @@ const WRANGLING_OPTIONS: { value: WranglingStatus; label: string; on: string; of
   {
     value: "done",
     label: "Fait",
-    on: "bg-success text-white border-success",
+    on: "bg-success text-success-foreground border-success",
     off: "border-success/40 text-success",
   },
   {
