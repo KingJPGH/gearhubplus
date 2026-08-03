@@ -613,6 +613,58 @@ function DayPage() {
                 </p>
               )}
 
+              {crewIds.length ? (
+                <div className="overflow-hidden rounded-xl border border-tint-5/40 border-l-4 border-l-tint-5">
+                  <p className="bg-tint-5-soft px-3 py-2 text-sm font-semibold text-tint-5">
+                    Data wrangling
+                  </p>
+                  <ul className="space-y-1 p-3 text-sm">
+                    {(dayCrew.data ?? []).map((row) => {
+                      const status =
+                        ((wrangling.data ?? []).find((w) => w.user_id === row.user_id)
+                          ?.status as WranglingStatus) ?? "todo";
+                      return (
+                        <li key={row.user_id} className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                              status === "done"
+                                ? "bg-success/15 text-success"
+                                : status === "na"
+                                  ? "bg-muted text-muted-foreground"
+                                  : "bg-destructive/15 text-destructive",
+                            )}
+                          >
+                            {WRANGLING_OPTIONS.find((o) => o.value === status)?.label}
+                          </span>
+                          <span className="font-medium">{nameFor(row.user_id)}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ) : null}
+
+              {documents.data?.length ? (
+                <div className="overflow-hidden rounded-xl border border-tint-2/40 border-l-4 border-l-tint-2">
+                  <p className="bg-tint-2-soft px-3 py-2 text-sm font-semibold text-tint-2">
+                    Documents
+                  </p>
+                  <ul className="space-y-1 p-3 text-sm">
+                    {documents.data.map((doc) => (
+                      <li key={doc.id}>
+                        <button
+                          onClick={() => openDoc(doc.file_path)}
+                          className="inline-flex items-center gap-2 font-medium hover:underline"
+                        >
+                          <FileText className="size-4 text-muted-foreground" /> {doc.file_name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
               {requests.data?.length ? (
                 <div className="overflow-hidden rounded-xl border border-tint-3/40 border-l-4 border-l-tint-3">
                   <p className="bg-tint-3-soft px-3 py-2 text-sm font-semibold text-tint-3">
@@ -620,28 +672,37 @@ function DayPage() {
                   </p>
                   <ul className="space-y-1.5 p-3 text-sm">
                     {requests.data.map((r) => (
-                      <li key={r.id} className="flex flex-wrap items-baseline gap-2">
-                        <span
-                          className={cn(
-                            "rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                            r.is_resolved
-                              ? "bg-success/15 text-success"
-                              : "bg-destructive/15 text-destructive",
-                          )}
+                      <li key={r.id}>
+                        <button
+                          onClick={() =>
+                            resolveRequest.mutate({ id: r.id, resolved: !r.is_resolved })
+                          }
+                          className="flex w-full flex-wrap items-baseline gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-accent"
                         >
-                          {r.is_resolved ? "Réglé" : "À faire"}
-                        </span>
-                        <span className={r.is_resolved ? "text-muted-foreground" : "font-medium"}>
-                          {r.label}
-                        </span>
-                        {r.details ? (
-                          <span className="w-full text-xs text-muted-foreground">{r.details}</span>
-                        ) : null}
+                          {r.is_resolved ? (
+                            <CheckSquare className="size-4 shrink-0 translate-y-0.5 text-success" />
+                          ) : (
+                            <Square className="size-4 shrink-0 translate-y-0.5 text-destructive" />
+                          )}
+                          <span
+                            className={
+                              r.is_resolved
+                                ? "text-muted-foreground line-through"
+                                : "font-medium"
+                            }
+                          >
+                            {r.label}
+                          </span>
+                          {r.details ? (
+                            <span className="w-full text-xs text-muted-foreground">{r.details}</span>
+                          ) : null}
+                        </button>
                       </li>
                     ))}
                   </ul>
                 </div>
               ) : null}
+
             </div>
 
           </DialogContent>
