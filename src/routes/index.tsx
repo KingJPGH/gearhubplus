@@ -36,10 +36,7 @@ function Index() {
       <header className="sticky top-0 z-30 border-b border-border bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="flex size-9 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-tint-4 text-brand-foreground shadow-glow">
-              <Clapperboard className="size-4" />
-            </span>
-            <span className="font-display text-base font-bold tracking-tight">GearUp</span>
+            <GearUpLogo className="text-lg" />
           </div>
           <Link to="/auth" className="btn-brand px-4 py-2 text-sm">
             {t("landing.login")}
