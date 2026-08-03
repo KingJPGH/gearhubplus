@@ -194,6 +194,93 @@ function DayPage() {
     },
   });
 
+  const wrangling = useQuery({
+    queryKey: ["day-wrangling", dayId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shoot_day_wrangling")
+        .select("id, user_id, status")
+        .eq("shoot_day_id", dayId);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const setWrangling = useMutation({
+    mutationFn: async ({ userId, status }: { userId: string; status: WranglingStatus }) => {
+      const { error } = await supabase
+        .from("shoot_day_wrangling")
+        .upsert(
+          { shoot_day_id: dayId, user_id: userId, status },
+          { onConflict: "shoot_day_id,user_id" },
+        );
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["day-wrangling", dayId] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const documents = useQuery({
+    queryKey: ["day-documents", dayId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shoot_day_documents")
+        .select("id, file_name, file_path, created_at")
+        .eq("shoot_day_id", dayId)
+        .order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const uploadDoc = useMutation({
+    mutationFn: async (file: File) => {
+      if (file.type !== "application/pdf") throw new Error("Seuls les fichiers PDF sont acceptés.");
+      if (file.size > 20 * 1024 * 1024) throw new Error("Le PDF dépasse 20 Mo.");
+      const { data: auth } = await supabase.auth.getUser();
+      const path = `${dayId}/${crypto.randomUUID()}.pdf`;
+      const up = await supabase.storage
+        .from("shoot-day-docs")
+        .upload(path, file, { contentType: "application/pdf" });
+      if (up.error) throw up.error;
+      const { error } = await supabase.from("shoot_day_documents").insert({
+        shoot_day_id: dayId,
+        uploaded_by: auth.user!.id,
+        file_path: path,
+        file_name: file.name,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Feuille de service ajoutée");
+      queryClient.invalidateQueries({ queryKey: ["day-documents", dayId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteDoc = useMutation({
+    mutationFn: async ({ id, path }: { id: string; path: string }) => {
+      const { error } = await supabase.from("shoot_day_documents").delete().eq("id", id);
+      if (error) throw error;
+      await supabase.storage.from("shoot-day-docs").remove([path]);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["day-documents", dayId] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  async function openDoc(path: string) {
+    const { data, error } = await supabase.storage
+      .from("shoot-day-docs")
+      .createSignedUrl(path, 3600);
+    if (error || !data) {
+      toast.error(error?.message ?? "Impossible d'ouvrir le PDF");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener");
+  }
+
+
+
   const toggleCrew = useMutation({
     mutationFn: async ({ userId, add }: { userId: string; add: boolean }) => {
       if (add) {
