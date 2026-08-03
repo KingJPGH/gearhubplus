@@ -360,6 +360,44 @@ export type Database = {
           },
         ]
       }
+      shoot_day_documents: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          shoot_day_id: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          shoot_day_id: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          shoot_day_id?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shoot_day_documents_shoot_day_id_fkey"
+            columns: ["shoot_day_id"]
+            isOneToOne: false
+            referencedRelation: "shoot_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shoot_day_equipment: {
         Row: {
           created_at: string
@@ -483,6 +521,48 @@ export type Database = {
           },
         ]
       }
+      shoot_day_wrangling: {
+        Row: {
+          created_at: string
+          id: string
+          shoot_day_id: string
+          status: Database["public"]["Enums"]["wrangling_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          shoot_day_id: string
+          status?: Database["public"]["Enums"]["wrangling_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          shoot_day_id?: string
+          status?: Database["public"]["Enums"]["wrangling_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shoot_day_wrangling_shoot_day_id_fkey"
+            columns: ["shoot_day_id"]
+            isOneToOne: false
+            referencedRelation: "shoot_days"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shoot_day_wrangling_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shoot_days: {
         Row: {
           call_time: string | null
@@ -586,6 +666,7 @@ export type Database = {
     Enums: {
       app_role: "super_admin"
       company_role: "admin" | "member"
+      wrangling_status: "todo" | "done" | "na"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -715,6 +796,7 @@ export const Constants = {
     Enums: {
       app_role: ["super_admin"],
       company_role: ["admin", "member"],
+      wrangling_status: ["todo", "done", "na"],
     },
   },
 } as const
