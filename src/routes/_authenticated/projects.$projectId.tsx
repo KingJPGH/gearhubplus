@@ -23,7 +23,7 @@ function ProjectPage() {
   const { projectId } = Route.useParams();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [day, setDay] = useState({ date: "", title: "", location: "", callTime: "" });
+  const [day, setDay] = useState({ date: "", endDate: "", title: "", location: "", callTime: "" });
 
   const project = useQuery({
     queryKey: ["project", projectId],
