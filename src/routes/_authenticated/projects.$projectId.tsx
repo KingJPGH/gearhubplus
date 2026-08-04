@@ -187,13 +187,27 @@ function ProjectPage() {
               }}
               className="panel mb-3 grid gap-2 p-3 sm:grid-cols-2"
             >
-              <input
-                type="date"
-                value={day.date}
-                onChange={(e) => setDay({ ...day, date: e.target.value })}
-                required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              />
+              <label className="flex flex-col gap-1">
+                <span className="label-tech">Date (ou début de plage)</span>
+                <input
+                  type="date"
+                  value={day.date}
+                  onChange={(e) => setDay({ ...day, date: e.target.value })}
+                  required
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="label-tech">Fin de plage (optionnel)</span>
+                <input
+                  type="date"
+                  value={day.endDate}
+                  min={day.date || undefined}
+                  onChange={(e) => setDay({ ...day, endDate: e.target.value })}
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </label>
+
               <input
                 value={day.title}
                 onChange={(e) => setDay({ ...day, title: e.target.value })}
