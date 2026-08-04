@@ -971,13 +971,14 @@ function DayPage() {
         </section>
 
         <section className="space-y-6">
-          <div>
-            <div className="mb-2 flex items-center gap-2 rounded-lg head-strip px-3 py-2">
-              <span className="size-2 rounded-full bg-brand" />
-              <p className="label-tech">Choisi — à apporter</p>
-              <span className="label-tech ml-auto">{selected.data?.length ?? 0} item(s)</span>
-            </div>
+          <Section
+            title="Choisi — à apporter"
+            icon={<span className="size-2 rounded-full bg-brand" />}
+            count={`${selected.data?.length ?? 0} item(s)`}
+            defaultOpen
+          >
             <div className="space-y-3">
+
               {selectedByOwner.length ? (
                 selectedByOwner.map(([ownerId, rows]) => (
                   <div key={ownerId} className="panel-accent overflow-hidden border-l-4 border-l-brand">
