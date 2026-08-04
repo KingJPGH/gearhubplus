@@ -1050,8 +1050,13 @@ function DayPage() {
           </div>
 
 
-          <div>
-            <p className="label-tech mb-2">Équipement manquant / demandes spéciales</p>
+          <Section
+            title="Équipement manquant / demandes spéciales"
+            icon={<Plus className="size-4 text-tint-5" />}
+            count={`${requests.data?.length ?? 0}`}
+            strip="head-strip-2"
+            defaultOpen
+          >
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -1110,9 +1115,57 @@ function DayPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </Section>
         </section>
       </div>
+
+      <div className="mt-6">
+        <Section
+          title="Data wrangling"
+          icon={<HardDriveDownload className="size-4 text-brand" />}
+          count={`${(wrangling.data ?? []).filter((w) => w.status === "done").length}/${crewIds.length} fait`}
+        >
+          <div className="panel divide-y divide-border">
+            {crewIds.length ? (
+              (dayCrew.data ?? []).map((row) => {
+                const status =
+                  ((wrangling.data ?? []).find((w) => w.user_id === row.user_id)
+                    ?.status as WranglingStatus) ?? "todo";
+                const canEdit = isAdmin || row.user_id === user?.id;
+                return (
+                  <div key={row.user_id} className="flex flex-wrap items-center gap-2 p-3">
+                    <p className="min-w-0 flex-1 truncate text-sm font-medium">
+                      {nameFor(row.user_id)}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {WRANGLING_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          disabled={!canEdit || setWrangling.isPending}
+                          onClick={() =>
+                            setWrangling.mutate({ userId: row.user_id, status: opt.value })
+                          }
+                          className={cn(
+                            "rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors disabled:opacity-60",
+                            status === opt.value ? opt.on : opt.off,
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="p-6 text-sm text-muted-foreground">
+                Ajoutez des membres présents pour suivre le data wrangling.
+              </p>
+            )}
+          </div>
+        </Section>
+      </div>
+
     </AppShell>
   );
 }
