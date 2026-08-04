@@ -417,6 +417,74 @@ function CompanyPage() {
           </div>
         </section>
       </div>
+
+      {isAdmin ? (
+        <div className="mt-6">
+          <Section
+            title="Inventaire de l'entreprise"
+            icon={<Boxes className="size-4 text-brand" />}
+            count={`${companyGear.data?.length ?? 0} article(s)`}
+          >
+            {companyGear.isLoading ? (
+              <p className="text-sm text-muted-foreground">Chargement…</p>
+            ) : companyGear.data?.length ? (
+              <div className="space-y-3">
+                {(members.data ?? []).map((m) => {
+                  const profile = m.profiles as { full_name: string | null; email: string | null } | null;
+                  const gear = (companyGear.data ?? []).filter((g) => g.owner_id === m.user_id);
+                  if (!gear.length) return null;
+                  return (
+                    <div key={m.id} className="panel p-4">
+                      <p className="mb-2 text-sm font-medium">
+                        {profile?.full_name || profile?.email || "Membre"}
+                        <span className="label-tech ml-2">{gear.length} article(s)</span>
+                      </p>
+                      <div className="space-y-3">
+                        {groupByCategory(gear, (g) => g.category).map(([category, items]) => (
+                          <div key={category}>
+                            <span
+                              className={cn(
+                                "inline-block rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                                categoryChipClass(category),
+                              )}
+                            >
+                              {category}
+                            </span>
+                            <ul className="mt-1.5 space-y-1">
+                              {items.map((g) => (
+                                <li key={g.id} className="flex flex-wrap items-center gap-2 text-sm">
+                                  <span className="font-medium">{g.name}</span>
+                                  <span className="label-tech">×{g.quantity}</span>
+                                  {g.serial_number ? (
+                                    <span className="label-tech">S/N {g.serial_number}</span>
+                                  ) : null}
+                                  {!g.is_available ? (
+                                    <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive">
+                                      Indisponible
+                                    </span>
+                                  ) : null}
+                                  {g.notes ? (
+                                    <span className="w-full text-xs text-muted-foreground">{g.notes}</span>
+                                  ) : null}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="panel p-6 text-sm text-muted-foreground">
+                Aucun équipement enregistré par les membres.
+              </div>
+            )}
+          </Section>
+        </div>
+      ) : null}
+
     </AppShell>
   );
 }
