@@ -21,6 +21,8 @@ type Dict = Record<string, { fr: string; en: string }>;
 export const DICT: Dict = {
   // shell / nav
   "nav.companies": { fr: "Entreprises", en: "Companies" },
+  "nav.agenda": { fr: "Journées à venir", en: "Upcoming days" },
+
   "nav.inventory": { fr: "Inventaire", en: "Inventory" },
   "nav.kits": { fr: "Kits", en: "Kits" },
   "nav.settings": { fr: "Paramètres", en: "Settings" },
