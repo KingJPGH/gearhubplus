@@ -967,7 +967,8 @@ function DayPage() {
                 </p>
               )}
             </div>
-          </div>
+          </Section>
+
         </section>
 
         <section className="space-y-6">
