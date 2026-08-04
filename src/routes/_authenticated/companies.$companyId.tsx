@@ -100,6 +100,23 @@ function CompanyPage() {
     },
   });
 
+  const memberIds = (members.data ?? []).map((m) => m.user_id);
+
+  const companyGear = useQuery({
+    queryKey: ["company-gear", companyId, memberIds.join(",")],
+    enabled: isAdmin && memberIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("equipment")
+        .select("id, name, category, quantity, is_available, notes, serial_number, owner_id")
+        .in("owner_id", memberIds)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+
   const createProject = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
