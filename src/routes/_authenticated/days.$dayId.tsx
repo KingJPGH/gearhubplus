@@ -800,11 +800,12 @@ function DayPage() {
             </div>
           </div>
 
-          <div>
-            <div className="mb-2 flex items-center gap-2 rounded-lg head-strip-2 px-3 py-2">
-              <FileText className="size-4 text-tint-5" />
-              <p className="label-tech">Feuille de service (PDF)</p>
-            </div>
+          <Section
+            title="Feuille de service (PDF)"
+            icon={<FileText className="size-4 text-tint-5" />}
+            count={`${documents.data?.length ?? 0}`}
+            strip="head-strip-2"
+          >
             <div className="panel divide-y divide-border">
               {documents.data?.length ? (
                 documents.data.map((doc) => (
@@ -843,7 +844,8 @@ function DayPage() {
                 />
               </label>
             </div>
-          </div>
+          </Section>
+
 
 
 
