@@ -3,11 +3,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ChevronRight, FolderOpen, Plus, UserPlus, Save, Trash2 } from "lucide-react";
+import { Boxes, ChevronRight, FolderOpen, Plus, UserPlus, Save, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { Section } from "@/components/Section";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSuperAdmin } from "@/lib/roles";
 import { addCompanyMember, createOfflineMember } from "@/lib/team.functions";
+import { categoryChipClass, groupByCategory } from "@/lib/equipment-categories";
+import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_authenticated/companies/$companyId")({
   head: () => ({
