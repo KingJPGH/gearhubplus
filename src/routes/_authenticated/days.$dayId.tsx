@@ -1048,7 +1048,8 @@ function DayPage() {
                 </p>
               )}
             </div>
-          </div>
+          </Section>
+
 
 
           <Section
