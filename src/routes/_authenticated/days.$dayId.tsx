@@ -847,15 +847,15 @@ function DayPage() {
 
 
 
-          <div>
-            <div className="mb-2 flex items-center gap-2 rounded-lg head-strip-2 px-3 py-2">
-              <span className="size-2 rounded-full bg-tint-5" />
-              <p className="label-tech">Disponible — à choisir</p>
-              <span className="label-tech ml-auto">
-                {poolByOwner.reduce((n, [, items]) => n + items.length, 0)} item(s)
-              </span>
-            </div>
+          <Section
+            title="Disponible — à choisir"
+            icon={<span className="size-2 rounded-full bg-tint-5" />}
+            count={`${poolByOwner.reduce((n, [, items]) => n + items.length, 0)} item(s)`}
+            strip="head-strip-2"
+            defaultOpen
+          >
             <div className="space-y-3">
+
               {poolByOwner.length ? (
                 poolByOwner.map(([ownerId, items]) => (
                   <div key={ownerId} className="panel overflow-hidden">
