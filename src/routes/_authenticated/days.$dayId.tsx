@@ -16,6 +16,8 @@ import {
   X,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { Section } from "@/components/Section";
+
 import {
   Dialog,
   DialogContent,
