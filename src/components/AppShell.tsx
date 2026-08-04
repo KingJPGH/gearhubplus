@@ -1,6 +1,14 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Boxes, LayoutGrid, LogOut, PackagePlus, Settings, ShieldCheck } from "lucide-react";
+import {
+  Boxes,
+  CalendarClock,
+  LayoutGrid,
+  LogOut,
+  PackagePlus,
+  Settings,
+  ShieldCheck,
+} from "lucide-react";
 import { GearUpLogo } from "@/components/GearUpLogo";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,10 +18,12 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { to: "/dashboard", key: "nav.companies", icon: LayoutGrid },
+  { to: "/agenda", key: "nav.agenda", icon: CalendarClock },
   { to: "/equipement", key: "nav.inventory", icon: Boxes },
   { to: "/kits", key: "nav.kits", icon: PackagePlus },
   { to: "/parametres", key: "nav.settings", icon: Settings },
 ] as const;
+
 
 
 

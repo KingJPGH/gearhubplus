@@ -23,7 +23,7 @@ function ProjectPage() {
   const { projectId } = Route.useParams();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [day, setDay] = useState({ date: "", title: "", location: "", callTime: "" });
+  const [day, setDay] = useState({ date: "", endDate: "", title: "", location: "", callTime: "" });
 
   const project = useQuery({
     queryKey: ["project", projectId],
@@ -98,22 +98,39 @@ function ProjectPage() {
 
   const createDay = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("shoot_days").insert({
-        project_id: projectId,
-        shoot_date: day.date,
-        title: day.title.trim() || null,
-        location: day.location.trim() || null,
-        call_time: day.callTime.trim() || null,
-      });
+      const start = new Date(`${day.date}T12:00:00`);
+      const end = day.endDate ? new Date(`${day.endDate}T12:00:00`) : start;
+      if (end < start) throw new Error("La date de fin doit suivre la date de début.");
+      const rows: Array<{
+        project_id: string;
+        shoot_date: string;
+        title: string | null;
+        location: string | null;
+        call_time: string | null;
+      }> = [];
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        rows.push({
+          project_id: projectId,
+          shoot_date: `${d.getFullYear()}-${`${d.getMonth() + 1}`.padStart(2, "0")}-${`${d.getDate()}`.padStart(2, "0")}`,
+          title: day.title.trim() || null,
+          location: day.location.trim() || null,
+          call_time: day.callTime.trim() || null,
+        });
+      }
+      if (rows.length > 60) throw new Error("Plage trop longue (max 60 journées).");
+      const { error } = await supabase.from("shoot_days").insert(rows);
       if (error) throw error;
+      return rows.length;
     },
-    onSuccess: () => {
-      setDay({ date: "", title: "", location: "", callTime: "" });
+    onSuccess: (count) => {
+      setDay({ date: "", endDate: "", title: "", location: "", callTime: "" });
       queryClient.invalidateQueries({ queryKey: ["shoot-days", projectId] });
-      toast.success("Journée de tournage créée");
+      queryClient.invalidateQueries({ queryKey: ["upcoming-days"] });
+      toast.success(count > 1 ? `${count} journées créées` : "Journée de tournage créée");
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const toggleCrew = useMutation({
     mutationFn: async ({ userId, add }: { userId: string; add: boolean }) => {
@@ -170,13 +187,27 @@ function ProjectPage() {
               }}
               className="panel mb-3 grid gap-2 p-3 sm:grid-cols-2"
             >
-              <input
-                type="date"
-                value={day.date}
-                onChange={(e) => setDay({ ...day, date: e.target.value })}
-                required
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              />
+              <label className="flex flex-col gap-1">
+                <span className="label-tech">Date (ou début de plage)</span>
+                <input
+                  type="date"
+                  value={day.date}
+                  onChange={(e) => setDay({ ...day, date: e.target.value })}
+                  required
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="label-tech">Fin de plage (optionnel)</span>
+                <input
+                  type="date"
+                  value={day.endDate}
+                  min={day.date || undefined}
+                  onChange={(e) => setDay({ ...day, endDate: e.target.value })}
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </label>
+
               <input
                 value={day.title}
                 onChange={(e) => setDay({ ...day, title: e.target.value })}

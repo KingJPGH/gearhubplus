@@ -16,6 +16,8 @@ import {
   X,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { Section } from "@/components/Section";
+
 import {
   Dialog,
   DialogContent,
@@ -712,8 +714,12 @@ function DayPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
         <section className="space-y-6">
-          <div>
-            <p className="label-tech mb-2">Équipe présente</p>
+          <Section
+            title="Équipe présente"
+            icon={<span className="size-2 rounded-full bg-brand" />}
+            count={`${crewIds.length} présent(s)`}
+            defaultOpen
+          >
             <div className="panel divide-y divide-border">
               {(isAdmin ? projectCrew.data : dayCrew.data)?.length ? (
                 (isAdmin ? projectCrew.data : dayCrew.data)!.map((row) => {
@@ -746,65 +752,15 @@ function DayPage() {
                 <p className="p-6 text-sm text-muted-foreground">Aucun membre assigné.</p>
               )}
             </div>
-          </div>
+          </Section>
 
-          <div>
-            <div className="mb-2 flex items-center gap-2 rounded-lg head-strip px-3 py-2">
-              <HardDriveDownload className="size-4 text-brand" />
-              <p className="label-tech">Data wrangling</p>
-              <span className="label-tech ml-auto">
-                {(wrangling.data ?? []).filter((w) => w.status === "done").length}/{crewIds.length}{" "}
-                fait
-              </span>
-            </div>
-            <div className="panel divide-y divide-border">
-              {crewIds.length ? (
-                (dayCrew.data ?? []).map((row) => {
-                  const status =
-                    ((wrangling.data ?? []).find((w) => w.user_id === row.user_id)
-                      ?.status as WranglingStatus) ?? "todo";
-                  const canEdit = isAdmin || row.user_id === user?.id;
-                  return (
-                    <div
-                      key={row.user_id}
-                      className="flex flex-wrap items-center gap-2 p-3"
-                    >
-                      <p className="min-w-0 flex-1 truncate text-sm font-medium">
-                        {nameFor(row.user_id)}
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {WRANGLING_OPTIONS.map((opt) => (
-                          <button
-                            key={opt.value}
-                            disabled={!canEdit || setWrangling.isPending}
-                            onClick={() =>
-                              setWrangling.mutate({ userId: row.user_id, status: opt.value })
-                            }
-                            className={cn(
-                              "rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors disabled:opacity-60",
-                              status === opt.value ? opt.on : opt.off,
-                            )}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="p-6 text-sm text-muted-foreground">
-                  Ajoutez des membres présents pour suivre le data wrangling.
-                </p>
-              )}
-            </div>
-          </div>
 
-          <div>
-            <div className="mb-2 flex items-center gap-2 rounded-lg head-strip-2 px-3 py-2">
-              <FileText className="size-4 text-tint-5" />
-              <p className="label-tech">Feuille de service (PDF)</p>
-            </div>
+          <Section
+            title="Feuille de service (PDF)"
+            icon={<FileText className="size-4 text-tint-5" />}
+            count={`${documents.data?.length ?? 0}`}
+            strip="head-strip-2"
+          >
             <div className="panel divide-y divide-border">
               {documents.data?.length ? (
                 documents.data.map((doc) => (
@@ -843,19 +799,20 @@ function DayPage() {
                 />
               </label>
             </div>
-          </div>
+          </Section>
 
 
 
-          <div>
-            <div className="mb-2 flex items-center gap-2 rounded-lg head-strip-2 px-3 py-2">
-              <span className="size-2 rounded-full bg-tint-5" />
-              <p className="label-tech">Disponible — à choisir</p>
-              <span className="label-tech ml-auto">
-                {poolByOwner.reduce((n, [, items]) => n + items.length, 0)} item(s)
-              </span>
-            </div>
+
+          <Section
+            title="Disponible — à choisir"
+            icon={<span className="size-2 rounded-full bg-tint-5" />}
+            count={`${poolByOwner.reduce((n, [, items]) => n + items.length, 0)} item(s)`}
+            strip="head-strip-2"
+            defaultOpen
+          >
             <div className="space-y-3">
+
               {poolByOwner.length ? (
                 poolByOwner.map(([ownerId, items]) => (
                   <div key={ownerId} className="panel overflow-hidden">
@@ -967,17 +924,19 @@ function DayPage() {
                 </p>
               )}
             </div>
-          </div>
+          </Section>
+
         </section>
 
         <section className="space-y-6">
-          <div>
-            <div className="mb-2 flex items-center gap-2 rounded-lg head-strip px-3 py-2">
-              <span className="size-2 rounded-full bg-brand" />
-              <p className="label-tech">Choisi — à apporter</p>
-              <span className="label-tech ml-auto">{selected.data?.length ?? 0} item(s)</span>
-            </div>
+          <Section
+            title="Choisi — à apporter"
+            icon={<span className="size-2 rounded-full bg-brand" />}
+            count={`${selected.data?.length ?? 0} item(s)`}
+            defaultOpen
+          >
             <div className="space-y-3">
+
               {selectedByOwner.length ? (
                 selectedByOwner.map(([ownerId, rows]) => (
                   <div key={ownerId} className="panel-accent overflow-hidden border-l-4 border-l-brand">
@@ -1047,11 +1006,17 @@ function DayPage() {
                 </p>
               )}
             </div>
-          </div>
+          </Section>
 
 
-          <div>
-            <p className="label-tech mb-2">Équipement manquant / demandes spéciales</p>
+
+          <Section
+            title="Équipement manquant / demandes spéciales"
+            icon={<Plus className="size-4 text-tint-5" />}
+            count={`${requests.data?.length ?? 0}`}
+            strip="head-strip-2"
+            defaultOpen
+          >
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -1110,9 +1075,57 @@ function DayPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </Section>
         </section>
       </div>
+
+      <div className="mt-6">
+        <Section
+          title="Data wrangling"
+          icon={<HardDriveDownload className="size-4 text-brand" />}
+          count={`${(wrangling.data ?? []).filter((w) => w.status === "done").length}/${crewIds.length} fait`}
+        >
+          <div className="panel divide-y divide-border">
+            {crewIds.length ? (
+              (dayCrew.data ?? []).map((row) => {
+                const status =
+                  ((wrangling.data ?? []).find((w) => w.user_id === row.user_id)
+                    ?.status as WranglingStatus) ?? "todo";
+                const canEdit = isAdmin || row.user_id === user?.id;
+                return (
+                  <div key={row.user_id} className="flex flex-wrap items-center gap-2 p-3">
+                    <p className="min-w-0 flex-1 truncate text-sm font-medium">
+                      {nameFor(row.user_id)}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {WRANGLING_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          disabled={!canEdit || setWrangling.isPending}
+                          onClick={() =>
+                            setWrangling.mutate({ userId: row.user_id, status: opt.value })
+                          }
+                          className={cn(
+                            "rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors disabled:opacity-60",
+                            status === opt.value ? opt.on : opt.off,
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="p-6 text-sm text-muted-foreground">
+                Ajoutez des membres présents pour suivre le data wrangling.
+              </p>
+            )}
+          </div>
+        </Section>
+      </div>
+
     </AppShell>
   );
 }
