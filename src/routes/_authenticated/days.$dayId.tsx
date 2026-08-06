@@ -627,7 +627,7 @@ function DayPage() {
       dayCrew.data?.find((m) => m.user_id === userId) ??
       projectCrew.data?.find((m) => m.user_id === userId);
     const p = row?.profiles as ProfileLite | null;
-    return p?.full_name || p?.email || "Membre";
+    return p?.full_name || p?.email || t("common.member");
   };
 
   const equipmentOf = (row: SelectedRow) =>
@@ -639,16 +639,10 @@ function DayPage() {
       notes: string | null;
     } | null;
 
+  const inputClass =
+    "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
 
-
-  const dateLabel = day.data
-    ? new Date(`${day.data.shoot_date}T12:00:00`).toLocaleDateString("fr-CA", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
-    : "Journée";
+  const dateLabel = day.data ? formatFullDate(day.data.shoot_date, lang) : t("common.day");
 
   return (
     <AppShell
@@ -661,7 +655,7 @@ function DayPage() {
         project ? (
           <span className="flex flex-wrap items-center gap-1">
             <Link to="/companies/$companyId" params={{ companyId: project.company_id }} className="hover:underline">
-              Entreprise
+              {t("nav.companies")}
             </Link>
             <span>/</span>
             <Link to="/projects/$projectId" params={{ projectId: project.id }} className="hover:underline">
@@ -671,12 +665,110 @@ function DayPage() {
         ) : null
       }
       actions={
-        <Dialog>
-          <DialogTrigger asChild>
-            <button className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground shadow-sm transition-transform hover:-translate-y-px">
-              <ClipboardList className="size-4" /> Récapitulatif
-            </button>
-          </DialogTrigger>
+        <div className="flex flex-wrap items-center gap-2">
+          {isAdmin ? (
+            <>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="inline-flex items-center gap-1.5 rounded-lg border border-input px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent">
+                    <LayoutTemplate className="size-4" /> {t("tpl.title")}
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>{t("tpl.title")}</DialogTitle>
+                  </DialogHeader>
+                  <p className="text-sm text-muted-foreground">{t("tpl.subtitle")}</p>
+
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (templateName.trim()) saveTemplate.mutate(templateName);
+                    }}
+                    className="space-y-2 rounded-xl border border-border p-3"
+                  >
+                    <p className="label-tech">{t("tpl.saveTitle")}</p>
+                    <input
+                      value={templateName}
+                      onChange={(e) => setTemplateName(e.target.value)}
+                      placeholder={t("tpl.namePlaceholder")}
+                      maxLength={120}
+                      className={inputClass}
+                    />
+                    <button
+                      type="submit"
+                      disabled={saveTemplate.isPending}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+                    >
+                      <BookmarkPlus className="size-4" /> {t("tpl.save")}
+                    </button>
+                  </form>
+
+                  <div className="space-y-2">
+                    <p className="label-tech">{t("tpl.apply")}</p>
+                    {templates.data?.length ? (
+                      templates.data.map((tpl) => (
+                        <div
+                          key={tpl.id}
+                          className="flex items-center gap-2 rounded-xl border border-border p-3"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">{tpl.name}</p>
+                            <p className="label-tech">
+                              {(tpl.day_template_items ?? []).length} {t("tpl.items")}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => applyTemplate.mutate(tpl.id)}
+                            disabled={applyTemplate.isPending}
+                            className="rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-brand-foreground disabled:opacity-60"
+                          >
+                            {t("common.add")}
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">{t("tpl.empty")}</p>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <button
+                onClick={() =>
+                  setDayEdit(
+                    dayEdit
+                      ? null
+                      : {
+                          title: day.data?.title ?? "",
+                          location: day.data?.location ?? "",
+                          callTime: day.data?.call_time ?? "",
+                        },
+                  )
+                }
+                title={t("day.editDay")}
+                className="rounded-lg border border-input p-2 text-muted-foreground hover:bg-accent"
+              >
+                <Pencil className="size-4" />
+              </button>
+              <button
+                onClick={() => {
+                  if (window.confirm(t("common.confirmDelete"))) deleteDay.mutate();
+                }}
+                title={t("day.deleteDay")}
+                className="rounded-lg border border-input p-2 text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 className="size-4" />
+              </button>
+            </>
+          ) : null}
+          <Dialog>
+            <DialogTrigger asChild>
+              <button className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground shadow-sm transition-transform hover:-translate-y-px">
+                <ClipboardList className="size-4" /> {t("day.summary")}
+              </button>
+            </DialogTrigger>
+
           <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>Récapitulatif — {dateLabel}</DialogTitle>
