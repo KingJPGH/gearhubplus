@@ -109,7 +109,66 @@ function DayPage() {
     },
   });
 
+  useEffect(() => {
+    if (day.data) {
+      setDebrief((day.data as { debrief: string | null }).debrief ?? "");
+      setDayEdit(null);
+    }
+  }, [day.data]);
+
+  const saveDebrief = useMutation({
+    mutationFn: async (text: string) => {
+      const { error } = await supabase
+        .from("shoot_days")
+        .update({ debrief: text.trim() || null })
+        .eq("id", dayId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shoot-day", dayId] });
+      toast.success(t("debrief.saved"));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const updateDay = useMutation({
+    mutationFn: async (state: { title: string; location: string; callTime: string }) => {
+      const { error } = await supabase
+        .from("shoot_days")
+        .update({
+          title: state.title.trim() || null,
+          location: state.location.trim() || null,
+          call_time: state.callTime.trim() || null,
+        })
+        .eq("id", dayId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setDayEdit(null);
+      queryClient.invalidateQueries({ queryKey: ["shoot-day", dayId] });
+      queryClient.invalidateQueries({ queryKey: ["upcoming-days"] });
+      toast.success(t("project.dayUpdated"));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteDay = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("shoot_days").delete().eq("id", dayId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success(t("project.dayDeleted"));
+      queryClient.invalidateQueries({ queryKey: ["upcoming-days"] });
+      const pid = (day.data?.projects as { id: string } | null)?.id;
+      if (pid) navigate({ to: "/projects/$projectId", params: { projectId: pid } });
+      else navigate({ to: "/agenda" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const project = day.data?.projects as { id: string; name: string; company_id: string } | null;
+
 
   const role = useQuery({
     queryKey: ["company-role", project?.company_id],
