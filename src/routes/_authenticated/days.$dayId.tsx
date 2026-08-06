@@ -712,7 +712,7 @@ function DayPage() {
                                   : "bg-destructive/15 text-destructive",
                             )}
                           >
-                            {WRANGLING_OPTIONS.find((o) => o.value === status)?.labelKey ?? "")}
+                            {t(`day.wrangling.${status}`)}
                           </span>
                           <span className="font-medium">{nameFor(row.user_id)}</span>
                         </li>
