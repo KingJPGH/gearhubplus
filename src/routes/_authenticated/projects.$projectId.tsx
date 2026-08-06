@@ -2,10 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, ChevronRight, Plus } from "lucide-react";
+import { CalendarDays, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSuperAdmin } from "@/lib/roles";
+import { useSettings } from "@/lib/settings";
+import { formatRange, parseDay, locOf, groupDayRanges } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   head: () => ({
@@ -19,11 +21,22 @@ export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   component: ProjectPage,
 });
 
+type EditState = {
+  key: string;
+  ids: string[];
+  title: string;
+  location: string;
+  callTime: string;
+  applyAll: boolean;
+};
+
 function ProjectPage() {
   const { projectId } = Route.useParams();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { t, lang } = useSettings();
   const [day, setDay] = useState({ date: "", endDate: "", title: "", location: "", callTime: "" });
+  const [edit, setEdit] = useState<EditState | null>(null);
 
   const project = useQuery({
     queryKey: ["project", projectId],
@@ -101,12 +114,14 @@ function ProjectPage() {
       const start = new Date(`${day.date}T12:00:00`);
       const end = day.endDate ? new Date(`${day.endDate}T12:00:00`) : start;
       if (end < start) throw new Error("La date de fin doit suivre la date de début.");
+      const rangeId = day.endDate && day.endDate !== day.date ? crypto.randomUUID() : null;
       const rows: Array<{
         project_id: string;
         shoot_date: string;
         title: string | null;
         location: string | null;
         call_time: string | null;
+        range_id: string | null;
       }> = [];
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         rows.push({
@@ -115,6 +130,7 @@ function ProjectPage() {
           title: day.title.trim() || null,
           location: day.location.trim() || null,
           call_time: day.callTime.trim() || null,
+          range_id: rangeId,
         });
       }
       if (rows.length > 60) throw new Error("Plage trop longue (max 60 journées).");
@@ -126,11 +142,47 @@ function ProjectPage() {
       setDay({ date: "", endDate: "", title: "", location: "", callTime: "" });
       queryClient.invalidateQueries({ queryKey: ["shoot-days", projectId] });
       queryClient.invalidateQueries({ queryKey: ["upcoming-days"] });
-      toast.success(count > 1 ? `${count} journées créées` : "Journée de tournage créée");
+      toast.success(
+        count > 1 ? `${count} ${t("project.daysCreated")}` : t("project.dayCreated"),
+      );
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const updateDays = useMutation({
+    mutationFn: async (state: EditState) => {
+      const { error } = await supabase
+        .from("shoot_days")
+        .update({
+          title: state.title.trim() || null,
+          location: state.location.trim() || null,
+          call_time: state.callTime.trim() || null,
+        })
+        .in("id", state.ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setEdit(null);
+      queryClient.invalidateQueries({ queryKey: ["shoot-days", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["upcoming-days"] });
+      toast.success(t("project.dayUpdated"));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteDays = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from("shoot_days").delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setEdit(null);
+      queryClient.invalidateQueries({ queryKey: ["shoot-days", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["upcoming-days"] });
+      toast.success(t("project.dayDeleted"));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const toggleCrew = useMutation({
     mutationFn: async ({ userId, add }: { userId: string; add: boolean }) => {
@@ -153,23 +205,23 @@ function ProjectPage() {
   });
 
   const assigned = new Set((crew.data ?? []).map((c) => c.user_id));
+  const groups = groupDayRanges(days.data ?? []);
+
+  const inputClass =
+    "rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
 
   return (
     <AppShell
       title={project.data?.name ?? "Projet"}
-      subtitle={isAdmin ? "Administrateur du projet." : "Membre du projet."}
+      subtitle={isAdmin ? t("project.admin") : t("project.memberOf")}
       breadcrumb={
         <span className="flex flex-wrap items-center gap-1">
           <Link to="/dashboard" className="hover:underline">
-            Entreprises
+            {t("nav.companies")}
           </Link>
           <span>/</span>
           {companyId ? (
-            <Link
-              to="/companies/$companyId"
-              params={{ companyId }}
-              className="hover:underline"
-            >
+            <Link to="/companies/$companyId" params={{ companyId }} className="hover:underline">
               {(project.data?.companies as { name: string } | null)?.name}
             </Link>
           ) : null}
@@ -178,7 +230,7 @@ function ProjectPage() {
     >
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <section>
-          <p className="label-tech mb-2">Journées de tournage</p>
+          <p className="label-tech mb-2">{t("project.days")}</p>
           {isAdmin ? (
             <form
               onSubmit={(e) => {
@@ -188,94 +240,213 @@ function ProjectPage() {
               className="panel mb-3 grid gap-2 p-3 sm:grid-cols-2"
             >
               <label className="flex flex-col gap-1">
-                <span className="label-tech">Date (ou début de plage)</span>
+                <span className="label-tech">{t("project.dateStart")}</span>
                 <input
                   type="date"
                   value={day.date}
                   onChange={(e) => setDay({ ...day, date: e.target.value })}
                   required
-                  className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className={inputClass}
                 />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="label-tech">Fin de plage (optionnel)</span>
+                <span className="label-tech">{t("project.dateEnd")}</span>
                 <input
                   type="date"
                   value={day.endDate}
                   min={day.date || undefined}
                   onChange={(e) => setDay({ ...day, endDate: e.target.value })}
-                  className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className={inputClass}
                 />
               </label>
 
               <input
                 value={day.title}
                 onChange={(e) => setDay({ ...day, title: e.target.value })}
-                placeholder="Titre (ex. Bloc 3, scènes 12-18)"
+                placeholder={t("project.dayTitle")}
                 maxLength={120}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className={inputClass}
               />
               <input
                 value={day.location}
                 onChange={(e) => setDay({ ...day, location: e.target.value })}
-                placeholder="Lieu"
+                placeholder={t("project.location")}
                 maxLength={120}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className={inputClass}
               />
               <div className="flex gap-2">
                 <input
                   value={day.callTime}
                   onChange={(e) => setDay({ ...day, callTime: e.target.value })}
-                  placeholder="Heure d'appel"
+                  placeholder={t("project.callTime")}
                   maxLength={30}
-                  className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className={`flex-1 ${inputClass}`}
                 />
                 <button
                   type="submit"
                   className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground"
                 >
-                  <Plus className="size-4" /> Journée
+                  <Plus className="size-4" /> {t("project.newDay")}
                 </button>
               </div>
             </form>
           ) : null}
 
           <div className="space-y-2">
-            {days.data?.length ? (
-              days.data.map((d) => (
-                <button
-                  key={d.id}
-                  onClick={() => navigate({ to: "/days/$dayId", params: { dayId: d.id } })}
-                  className="panel flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-accent"
-                >
-                  <span className="flex size-9 items-center justify-center rounded-md bg-brand-soft text-primary">
-                    <CalendarDays className="size-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-medium">
-                      {new Date(`${d.shoot_date}T12:00:00`).toLocaleDateString("fr-CA", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </p>
-                    <p className="label-tech">
-                      {[d.title, d.location, d.call_time].filter(Boolean).join(" · ") || "À planifier"}
-                    </p>
+            {groups.length ? (
+              groups.map((group) => {
+                const multi = group.days.length > 1;
+                const d = group.first;
+                const editing = edit?.key === group.key;
+                return (
+                  <div key={group.key} className="panel overflow-hidden">
+                    <div className="flex items-center gap-3 p-4">
+                      <button
+                        onClick={() => navigate({ to: "/days/$dayId", params: { dayId: d.id } })}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                      >
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-brand-soft text-primary">
+                          <CalendarDays className="size-4" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block font-medium">
+                            {formatRange(d.shoot_date, group.last.shoot_date, lang)}
+                          </span>
+                          <span className="label-tech block truncate">
+                            {[d.title, d.location, d.call_time].filter(Boolean).join(" · ") ||
+                              t("agenda.toplan")}
+                            {multi ? ` · ${group.days.length} ${t("common.days")}` : ""}
+                          </span>
+                        </span>
+                      </button>
+                      {isAdmin ? (
+                        <>
+                          <button
+                            onClick={() =>
+                              setEdit(
+                                editing
+                                  ? null
+                                  : {
+                                      key: group.key,
+                                      ids: group.days.map((x) => x.id),
+                                      title: d.title ?? "",
+                                      location: d.location ?? "",
+                                      callTime: d.call_time ?? "",
+                                      applyAll: multi,
+                                    },
+                              )
+                            }
+                            title={t("project.editDay")}
+                            className="rounded-md border border-input p-1.5 text-muted-foreground hover:bg-accent"
+                          >
+                            <Pencil className="size-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (window.confirm(t("common.confirmDelete")))
+                                deleteDays.mutate(group.days.map((x) => x.id));
+                            }}
+                            title={multi ? t("project.deleteRange") : t("project.deleteDay")}
+                            className="rounded-md border border-input p-1.5 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                      )}
+                    </div>
+
+                    {multi ? (
+                      <div className="flex flex-wrap gap-1.5 border-t border-border px-4 py-2">
+                        {group.days.map((sub) => (
+                          <button
+                            key={sub.id}
+                            onClick={() =>
+                              navigate({ to: "/days/$dayId", params: { dayId: sub.id } })
+                            }
+                            className="rounded-full border border-input px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:bg-accent"
+                          >
+                            {parseDay(sub.shoot_date).toLocaleDateString(locOf(lang), {
+                              weekday: "short",
+                              day: "numeric",
+                              month: "short",
+                            })}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {editing && edit ? (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          updateDays.mutate({
+                            ...edit,
+                            ids: edit.applyAll ? group.days.map((x) => x.id) : [d.id],
+                          });
+                        }}
+                        className="grid gap-2 border-t border-border bg-accent/40 p-3 sm:grid-cols-2"
+                      >
+                        <input
+                          value={edit.title}
+                          onChange={(e) => setEdit({ ...edit, title: e.target.value })}
+                          placeholder={t("project.dayTitle")}
+                          maxLength={120}
+                          className={inputClass}
+                        />
+                        <input
+                          value={edit.location}
+                          onChange={(e) => setEdit({ ...edit, location: e.target.value })}
+                          placeholder={t("project.location")}
+                          maxLength={120}
+                          className={inputClass}
+                        />
+                        <input
+                          value={edit.callTime}
+                          onChange={(e) => setEdit({ ...edit, callTime: e.target.value })}
+                          placeholder={t("project.callTime")}
+                          maxLength={30}
+                          className={inputClass}
+                        />
+                        <div className="flex flex-wrap items-center gap-2">
+                          {multi ? (
+                            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <input
+                                type="checkbox"
+                                checked={edit.applyAll}
+                                onChange={(e) => setEdit({ ...edit, applyAll: e.target.checked })}
+                              />
+                              {t("project.applyToRange")}
+                            </label>
+                          ) : null}
+                          <button
+                            type="submit"
+                            className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
+                          >
+                            {t("common.save")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEdit(null)}
+                            className="rounded-md border border-input px-3 py-1.5 text-xs text-muted-foreground"
+                          >
+                            {t("common.cancel")}
+                          </button>
+                        </div>
+                      </form>
+                    ) : null}
                   </div>
-                  <ChevronRight className="ml-auto size-4 text-muted-foreground" />
-                </button>
-              ))
+                );
+              })
             ) : (
-              <div className="panel p-6 text-sm text-muted-foreground">
-                Aucune journée de tournage.
-              </div>
+              <div className="panel p-6 text-sm text-muted-foreground">{t("project.noDays")}</div>
             )}
           </div>
         </section>
 
         <section>
-          <p className="label-tech mb-2">Équipe du projet</p>
+          <p className="label-tech mb-2">{t("project.crew")}</p>
           <div className="panel divide-y divide-border">
             {(isAdmin ? companyPeople.data : crew.data)?.map((row) => {
               const userId = row.user_id;
@@ -284,7 +455,7 @@ function ProjectPage() {
               return (
                 <div key={userId} className="flex items-center gap-2 p-3">
                   <span className="min-w-0 flex-1 truncate text-sm">
-                    {profile?.full_name || profile?.email || "Membre"}
+                    {profile?.full_name || profile?.email || t("common.member")}
                   </span>
                   {isAdmin ? (
                     <button
@@ -295,7 +466,7 @@ function ProjectPage() {
                           : "rounded-md border border-input px-2.5 py-1 text-xs text-muted-foreground"
                       }
                     >
-                      {isOn ? "Dans le projet" : "Ajouter"}
+                      {isOn ? t("project.inProject") : t("common.add")}
                     </button>
                   ) : null}
                 </div>
