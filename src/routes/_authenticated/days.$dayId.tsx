@@ -1,14 +1,18 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
+  BookmarkPlus,
   Check,
   CheckSquare,
   ClipboardList,
   FileText,
   HardDriveDownload,
+  LayoutTemplate,
+  MessageSquareText,
   PackagePlus,
+  Pencil,
   Plus,
   Square,
   Trash2,
@@ -28,8 +32,11 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSuperAdmin } from "@/lib/roles";
 import { useSession } from "@/lib/session";
+import { useSettings } from "@/lib/settings";
+import { formatFullDate } from "@/lib/dates";
 import { categoryChipClass, groupByCategory } from "@/lib/equipment-categories";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_authenticated/days/$dayId")({
   head: () => ({
