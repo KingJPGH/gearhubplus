@@ -57,22 +57,22 @@ type ProfileLite = { full_name: string | null; email: string | null; role_title:
 
 type WranglingStatus = "todo" | "done" | "na";
 
-const WRANGLING_OPTIONS: { value: WranglingStatus; label: string; on: string; off: string }[] = [
+const WRANGLING_OPTIONS: { value: WranglingStatus; labelKey: string; on: string; off: string }[] = [
   {
     value: "todo",
-    label: "À faire",
+    labelKey: "day.wrangling.todo",
     on: "bg-destructive text-destructive-foreground border-destructive",
     off: "border-destructive/40 text-destructive",
   },
   {
     value: "done",
-    label: "Fait",
+    labelKey: "day.wrangling.done",
     on: "bg-success text-success-foreground border-success",
     off: "border-success/40 text-success",
   },
   {
     value: "na",
-    label: "Ne s'applique pas",
+    labelKey: "day.wrangling.na",
     on: "bg-muted text-foreground border-border",
     off: "border-border text-muted-foreground",
   },
@@ -81,10 +81,19 @@ const WRANGLING_OPTIONS: { value: WranglingStatus; label: string; on: string; of
 function DayPage() {
   const { dayId } = Route.useParams();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { t, lang } = useSettings();
   const [request, setRequest] = useState({ label: "", details: "" });
   const { user } = useSession();
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const toggleChecked = (key: string) => setChecked((c) => ({ ...c, [key]: !c[key] }));
+  const [debrief, setDebrief] = useState("");
+  const [templateName, setTemplateName] = useState("");
+  const [dayEdit, setDayEdit] = useState<{ title: string; location: string; callTime: string } | null>(
+    null,
+  );
+
+
 
 
   const day = useQuery({
