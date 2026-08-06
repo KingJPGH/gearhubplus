@@ -983,8 +983,55 @@ function DayPage() {
       }
     >
 
+      {dayEdit ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            updateDay.mutate(dayEdit);
+          }}
+          className="panel mb-6 grid gap-2 p-3 sm:grid-cols-2"
+        >
+          <input
+            value={dayEdit.title}
+            onChange={(e) => setDayEdit({ ...dayEdit, title: e.target.value })}
+            placeholder={t("project.dayTitle")}
+            maxLength={120}
+            className={inputClass}
+          />
+          <input
+            value={dayEdit.location}
+            onChange={(e) => setDayEdit({ ...dayEdit, location: e.target.value })}
+            placeholder={t("project.location")}
+            maxLength={120}
+            className={inputClass}
+          />
+          <input
+            value={dayEdit.callTime}
+            onChange={(e) => setDayEdit({ ...dayEdit, callTime: e.target.value })}
+            placeholder={t("project.callTime")}
+            maxLength={30}
+            className={inputClass}
+          />
+          <div className="flex items-center gap-2">
+            <button
+              type="submit"
+              className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
+            >
+              {t("common.save")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDayEdit(null)}
+              className="rounded-md border border-input px-3 py-1.5 text-sm text-muted-foreground"
+            >
+              {t("common.cancel")}
+            </button>
+          </div>
+        </form>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+
         <section className="space-y-6">
           <Section
             title="Équipe présente"
