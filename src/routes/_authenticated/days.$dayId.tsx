@@ -494,14 +494,85 @@ function DayPage() {
   const blockReason = (item: PoolItem): string | null => {
     const conflict = conflictById.get(item.id);
     if (conflict)
-      return `Utilisé par « ${conflict.project_name} »${conflict.day_title ? ` — ${conflict.day_title}` : ""}`;
-    if (blockedOwners.has(item.owner_id)) return "Membre indisponible cette journée";
-    if (blockedIds.has(item.id)) return "Bloqué par le propriétaire cette journée";
+      return `${t("day.blocked.usedBy")} « ${conflict.project_name} »${conflict.day_title ? ` — ${conflict.day_title}` : ""}`;
+    if (blockedOwners.has(item.owner_id)) return t("day.blocked.member");
+    if (blockedIds.has(item.id)) return t("day.blocked.owner");
     return null;
   };
 
   const kitsByOwner = (ownerId: string) =>
     (kits.data ?? []).filter((kit) => kit.owner_id === ownerId);
+
+  const templates = useQuery({
+    queryKey: ["day-templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("day_templates")
+        .select("id, name, owner_id, day_template_items(equipment_id, member_id)")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const saveTemplate = useMutation({
+    mutationFn: async (name: string) => {
+      const rows = selected.data ?? [];
+      if (!rows.length) throw new Error(t("tpl.emptySelection"));
+      const { data: auth } = await supabase.auth.getUser();
+      const { data: tpl, error } = await supabase
+        .from("day_templates")
+        .insert({ owner_id: auth.user!.id, name: name.trim() })
+        .select("id")
+        .single();
+      if (error) throw error;
+      const { error: itemsError } = await supabase.from("day_template_items").insert(
+        rows.map((r) => ({
+          template_id: tpl.id,
+          equipment_id: r.equipment_id,
+          member_id: r.owner_id,
+        })),
+      );
+      if (itemsError) throw itemsError;
+    },
+    onSuccess: () => {
+      setTemplateName("");
+      queryClient.invalidateQueries({ queryKey: ["day-templates"] });
+      toast.success(t("tpl.saved"));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const applyTemplate = useMutation({
+    mutationFn: async (templateId: string) => {
+      const tpl = (templates.data ?? []).find((x) => x.id === templateId);
+      const items = (tpl?.day_template_items ?? []) as Array<{
+        equipment_id: string;
+        member_id: string;
+      }>;
+      const poolById = new Map((gear.data ?? []).map((g) => [g.id, g] as const));
+      const rows = items
+        .filter((i) => {
+          const item = poolById.get(i.equipment_id);
+          return !!item && !selectedIds.has(i.equipment_id) && !blockReason(item);
+        })
+        .map((i) => ({
+          shoot_day_id: dayId,
+          equipment_id: i.equipment_id,
+          owner_id: i.member_id,
+        }));
+      if (!rows.length) throw new Error(t("tpl.noneApplicable"));
+      const { error } = await supabase.from("shoot_day_equipment").insert(rows);
+      if (error) throw error;
+      return rows.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ["day-gear", dayId] });
+      toast.success(`${count} ${t("tpl.applied")}`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const addKit = useMutation({
     mutationFn: async ({ kitId, ownerId }: { kitId: string; ownerId: string }) => {
