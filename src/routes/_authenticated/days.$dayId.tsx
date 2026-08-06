@@ -591,7 +591,7 @@ function DayPage() {
           owner_id: ownerId,
         }));
       if (!rows.length) {
-        throw new Error("Aucun objet de ce kit n'est disponible pour cette journée.");
+        throw new Error("" + t("tpl.noneApplicable") + "");
       }
       const { error } = await supabase.from("shoot_day_equipment").insert(rows);
       if (error) throw error;
@@ -771,7 +771,7 @@ function DayPage() {
 
           <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Récapitulatif — {dateLabel}</DialogTitle>
+              <DialogTitle>{t("day.summaryTitle")} — {dateLabel}</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
               {[day.data?.title, day.data?.location, day.data?.call_time]
@@ -849,7 +849,7 @@ function DayPage() {
                 ))
               ) : (
                 <p className="rounded-xl border border-dashed border-border p-3 text-sm text-muted-foreground">
-                  Aucun équipement retenu.
+                  {t("day.noGearSummary")}
                 </p>
               )}
 
@@ -887,9 +887,7 @@ function DayPage() {
 
               {documents.data?.length ? (
                 <div className="overflow-hidden rounded-xl border border-tint-2/40 border-l-4 border-l-tint-2">
-                  <p className="bg-tint-2-soft px-3 py-2 text-sm font-semibold text-tint-2">
-                    Documents
-                  </p>
+                  <p className="bg-tint-2-soft px-3 py-2 text-sm font-semibold text-tint-2">{t("day.documents")}</p>
                   <ul className="space-y-1 p-3 text-sm">
                     {documents.data.map((doc) => (
                       <li key={doc.id}>
@@ -908,7 +906,7 @@ function DayPage() {
               {requests.data?.length ? (
                 <div className="overflow-hidden rounded-xl border border-tint-3/40 border-l-4 border-l-tint-3">
                   <p className="bg-tint-3-soft px-3 py-2 text-sm font-semibold text-tint-3">
-                    Notes et demandes spéciales
+                    {t("day.notesRequests")}
                   </p>
                   <ul className="space-y-1.5 p-3 text-sm">
                     {requests.data.map((r) => (
@@ -1034,9 +1032,9 @@ function DayPage() {
 
         <section className="space-y-6">
           <Section
-            title="Équipe présente"
+            title={t("day.crewPresent")}
             icon={<span className="size-2 rounded-full bg-brand" />}
-            count={`${crewIds.length} présent(s)`}
+            count={`${crewIds.length} ${t("day.presentCount")}`}
             defaultOpen
           >
             <div className="panel divide-y divide-border">
@@ -1061,21 +1059,21 @@ function DayPage() {
                               : "rounded-md border border-input px-2.5 py-1 text-xs text-muted-foreground"
                           }
                         >
-                          {on ? "Présent" : "Ajouter"}
+                          {on ? t("day.present") : t("common.add")}
                         </button>
                       ) : null}
                     </div>
                   );
                 })
               ) : (
-                <p className="p-6 text-sm text-muted-foreground">Aucun membre assigné.</p>
+                <p className="p-6 text-sm text-muted-foreground">{t("day.noCrew")}</p>
               )}
             </div>
           </Section>
 
 
           <Section
-            title="Feuille de service (PDF)"
+            title={t("day.callsheet")}
             icon={<FileText className="size-4 text-tint-5" />}
             count={`${documents.data?.length ?? 0}`}
             strip="head-strip-2"
@@ -1101,11 +1099,11 @@ function DayPage() {
                   </div>
                 ))
               ) : (
-                <p className="p-4 text-sm text-muted-foreground">Aucun document pour l'instant.</p>
+                <p className="p-4 text-sm text-muted-foreground">{t("day.noDoc")}</p>
               )}
               <label className="flex cursor-pointer items-center gap-2 p-3 text-sm font-medium text-brand">
                 <Upload className="size-4" />
-                {uploadDoc.isPending ? "Téléversement…" : "Ajouter un PDF"}
+                {uploadDoc.isPending ? t("day.uploading") : t("day.addPdf")}
                 <input
                   type="file"
                   accept="application/pdf"
@@ -1124,7 +1122,7 @@ function DayPage() {
 
 
           <Section
-            title="Disponible — à choisir"
+            title={t("day.available")}
             icon={<span className="size-2 rounded-full bg-tint-5" />}
             count={`${poolByOwner.reduce((n, [, items]) => n + items.length, 0)} item(s)`}
             strip="head-strip-2"
@@ -1138,11 +1136,11 @@ function DayPage() {
                     <div className="border-b border-border bg-accent/60 px-3 py-2">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium">{nameFor(ownerId)}</p>
-                        <span className="label-tech">{items.length} dispo.</span>
+                        <span className="label-tech">{items.length} {t("day.availableShort")}</span>
                       </div>
                       {isAdmin && kitsByOwner(ownerId).length ? (
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          <span className="label-tech">Kits :</span>
+                          <span className="label-tech">{t("day.kits")}</span>
                           {kitsByOwner(ownerId).map((kit) => (
                             <button
                               key={kit.id}
@@ -1197,8 +1195,7 @@ function DayPage() {
                                       </span>
                                       {reason ? (
                                         <span className="rounded-full bg-destructive px-2 py-0.5 text-[11px] font-semibold text-destructive-foreground">
-                                          Indisponible
-                                        </span>
+                                          {t("day.unavailable")}</span>
                                       ) : null}
                                     </div>
                                     {reason ? (
@@ -1224,7 +1221,7 @@ function DayPage() {
                                           : "bg-tint-5-soft text-tint-5",
                                       )}
                                     >
-                                      {reason ? "Pris" : "Choisir"}
+                                      {reason ? t("day.taken") : t("day.pick")}
                                     </button>
                                   ) : null}
                                 </div>
@@ -1239,7 +1236,7 @@ function DayPage() {
                 ))
               ) : (
                 <p className="panel p-6 text-sm text-muted-foreground">
-                  Tout l'équipement disponible a été choisi (ou aucun membre présent).
+                  {t("day.allPicked")}
                 </p>
               )}
             </div>
@@ -1249,7 +1246,7 @@ function DayPage() {
 
         <section className="space-y-6">
           <Section
-            title="Choisi — à apporter"
+            title={t("day.chosen")}
             icon={<span className="size-2 rounded-full bg-brand" />}
             count={`${selected.data?.length ?? 0} item(s)`}
             defaultOpen
@@ -1304,9 +1301,7 @@ function DayPage() {
                                           })
                                         }
                                         className="rounded-md border border-input px-2.5 py-1 text-xs text-muted-foreground hover:text-destructive"
-                                      >
-                                        Retirer
-                                      </button>
+                                      >{t("day.remove")}</button>
                                     ) : null}
                                   </div>
                                 );
@@ -1321,7 +1316,7 @@ function DayPage() {
                 ))
               ) : (
                 <p className="panel p-6 text-sm text-muted-foreground">
-                  Rien de retenu pour l'instant.
+                  {t("day.nothingPicked")}
                 </p>
               )}
             </div>
@@ -1330,7 +1325,7 @@ function DayPage() {
 
 
           <Section
-            title="Équipement manquant / demandes spéciales"
+            title={t("day.requests")}
             icon={<Plus className="size-4 text-tint-5" />}
             count={`${requests.data?.length ?? 0}`}
             strip="head-strip-2"
@@ -1346,7 +1341,7 @@ function DayPage() {
               <input
                 value={request.label}
                 onChange={(e) => setRequest({ ...request, label: e.target.value })}
-                placeholder="Ex. Trépied lourd manquant"
+                placeholder={t("day.requestLabel")}
                 maxLength={120}
                 required
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -1354,7 +1349,7 @@ function DayPage() {
               <textarea
                 value={request.details}
                 onChange={(e) => setRequest({ ...request, details: e.target.value })}
-                placeholder="Détails, note pour l'équipe (optionnel)"
+                placeholder={t("day.requestDetails")}
                 maxLength={1000}
                 rows={2}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -1363,7 +1358,7 @@ function DayPage() {
                 type="submit"
                 className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground"
               >
-                <Plus className="size-4" /> Ajouter la demande
+                <Plus className="size-4" /> {t("day.addRequest")}
               </button>
             </form>
 
@@ -1400,9 +1395,9 @@ function DayPage() {
 
       <div className="mt-6">
         <Section
-          title="Data wrangling"
+          title={t("day.wrangling")}
           icon={<HardDriveDownload className="size-4 text-brand" />}
-          count={`${(wrangling.data ?? []).filter((w) => w.status === "done").length}/${crewIds.length} fait`}
+          count={`${(wrangling.data ?? []).filter((w) => w.status === "done").length}/${crewIds.length} ${t("day.wranglingDone")}`}
         >
           <div className="panel divide-y divide-border">
             {crewIds.length ? (
@@ -1438,7 +1433,7 @@ function DayPage() {
               })
             ) : (
               <p className="p-6 text-sm text-muted-foreground">
-                Ajoutez des membres présents pour suivre le data wrangling.
+                {t("day.wranglingEmpty")}
               </p>
             )}
           </div>
