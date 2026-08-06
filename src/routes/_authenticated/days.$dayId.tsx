@@ -943,12 +943,46 @@ function DayPage() {
                 </div>
               ) : null}
 
+              <div className="overflow-hidden rounded-xl border border-tint-6/40 border-l-4 border-l-tint-6">
+                <p className="flex items-center gap-2 bg-tint-6-soft px-3 py-2 text-sm font-semibold text-tint-6">
+                  <MessageSquareText className="size-4" /> {t("debrief.title")}
+                </p>
+                <div className="space-y-2 p-3">
+                  <p className="text-xs text-muted-foreground">{t("debrief.hint")}</p>
+                  {isAdmin ? (
+                    <>
+                      <textarea
+                        value={debrief}
+                        onChange={(e) => setDebrief(e.target.value)}
+                        placeholder={t("debrief.placeholder")}
+                        rows={4}
+                        maxLength={4000}
+                        className={inputClass}
+                      />
+                      <button
+                        onClick={() => saveDebrief.mutate(debrief)}
+                        disabled={saveDebrief.isPending}
+                        className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-60"
+                      >
+                        {t("common.save")}
+                      </button>
+                    </>
+                  ) : (
+                    <p className="whitespace-pre-wrap text-sm">
+                      {debrief || <span className="text-muted-foreground">—</span>}
+                    </p>
+                  )}
+                </div>
+              </div>
+
             </div>
 
           </DialogContent>
         </Dialog>
+        </div>
       }
     >
+
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
         <section className="space-y-6">
