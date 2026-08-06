@@ -74,6 +74,87 @@ export type Database = {
           },
         ]
       }
+      day_template_items: {
+        Row: {
+          created_at: string
+          equipment_id: string
+          id: string
+          member_id: string
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          equipment_id: string
+          id?: string
+          member_id: string
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          equipment_id?: string
+          id?: string
+          member_id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "day_template_items_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "day_template_items_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "day_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "day_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      day_templates: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "day_templates_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment: {
         Row: {
           category: string | null
@@ -567,30 +648,36 @@ export type Database = {
         Row: {
           call_time: string | null
           created_at: string
+          debrief: string | null
           id: string
           location: string | null
           notes: string | null
           project_id: string
+          range_id: string | null
           shoot_date: string
           title: string | null
         }
         Insert: {
           call_time?: string | null
           created_at?: string
+          debrief?: string | null
           id?: string
           location?: string | null
           notes?: string | null
           project_id: string
+          range_id?: string | null
           shoot_date: string
           title?: string | null
         }
         Update: {
           call_time?: string | null
           created_at?: string
+          debrief?: string | null
           id?: string
           location?: string | null
           notes?: string | null
           project_id?: string
+          range_id?: string | null
           shoot_date?: string
           title?: string | null
         }

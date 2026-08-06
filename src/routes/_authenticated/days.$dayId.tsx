@@ -1,14 +1,18 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
+  BookmarkPlus,
   Check,
   CheckSquare,
   ClipboardList,
   FileText,
   HardDriveDownload,
+  LayoutTemplate,
+  MessageSquareText,
   PackagePlus,
+  Pencil,
   Plus,
   Square,
   Trash2,
@@ -28,8 +32,11 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSuperAdmin } from "@/lib/roles";
 import { useSession } from "@/lib/session";
+import { useSettings } from "@/lib/settings";
+import { formatFullDate } from "@/lib/dates";
 import { categoryChipClass, groupByCategory } from "@/lib/equipment-categories";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_authenticated/days/$dayId")({
   head: () => ({
@@ -50,22 +57,22 @@ type ProfileLite = { full_name: string | null; email: string | null; role_title:
 
 type WranglingStatus = "todo" | "done" | "na";
 
-const WRANGLING_OPTIONS: { value: WranglingStatus; label: string; on: string; off: string }[] = [
+const WRANGLING_OPTIONS: { value: WranglingStatus; labelKey: string; on: string; off: string }[] = [
   {
     value: "todo",
-    label: "À faire",
+    labelKey: "day.wrangling.todo",
     on: "bg-destructive text-destructive-foreground border-destructive",
     off: "border-destructive/40 text-destructive",
   },
   {
     value: "done",
-    label: "Fait",
+    labelKey: "day.wrangling.done",
     on: "bg-success text-success-foreground border-success",
     off: "border-success/40 text-success",
   },
   {
     value: "na",
-    label: "Ne s'applique pas",
+    labelKey: "day.wrangling.na",
     on: "bg-muted text-foreground border-border",
     off: "border-border text-muted-foreground",
   },
@@ -74,10 +81,19 @@ const WRANGLING_OPTIONS: { value: WranglingStatus; label: string; on: string; of
 function DayPage() {
   const { dayId } = Route.useParams();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { t, lang } = useSettings();
   const [request, setRequest] = useState({ label: "", details: "" });
   const { user } = useSession();
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const toggleChecked = (key: string) => setChecked((c) => ({ ...c, [key]: !c[key] }));
+  const [debrief, setDebrief] = useState("");
+  const [templateName, setTemplateName] = useState("");
+  const [dayEdit, setDayEdit] = useState<{ title: string; location: string; callTime: string } | null>(
+    null,
+  );
+
+
 
 
   const day = useQuery({
@@ -93,7 +109,66 @@ function DayPage() {
     },
   });
 
+  useEffect(() => {
+    if (day.data) {
+      setDebrief((day.data as { debrief: string | null }).debrief ?? "");
+      setDayEdit(null);
+    }
+  }, [day.data]);
+
+  const saveDebrief = useMutation({
+    mutationFn: async (text: string) => {
+      const { error } = await supabase
+        .from("shoot_days")
+        .update({ debrief: text.trim() || null })
+        .eq("id", dayId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shoot-day", dayId] });
+      toast.success(t("debrief.saved"));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const updateDay = useMutation({
+    mutationFn: async (state: { title: string; location: string; callTime: string }) => {
+      const { error } = await supabase
+        .from("shoot_days")
+        .update({
+          title: state.title.trim() || null,
+          location: state.location.trim() || null,
+          call_time: state.callTime.trim() || null,
+        })
+        .eq("id", dayId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setDayEdit(null);
+      queryClient.invalidateQueries({ queryKey: ["shoot-day", dayId] });
+      queryClient.invalidateQueries({ queryKey: ["upcoming-days"] });
+      toast.success(t("project.dayUpdated"));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteDay = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("shoot_days").delete().eq("id", dayId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success(t("project.dayDeleted"));
+      queryClient.invalidateQueries({ queryKey: ["upcoming-days"] });
+      const pid = (day.data?.projects as { id: string } | null)?.id;
+      if (pid) navigate({ to: "/projects/$projectId", params: { projectId: pid } });
+      else navigate({ to: "/agenda" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const project = day.data?.projects as { id: string; name: string; company_id: string } | null;
+
 
   const role = useQuery({
     queryKey: ["company-role", project?.company_id],
@@ -419,14 +494,85 @@ function DayPage() {
   const blockReason = (item: PoolItem): string | null => {
     const conflict = conflictById.get(item.id);
     if (conflict)
-      return `Utilisé par « ${conflict.project_name} »${conflict.day_title ? ` — ${conflict.day_title}` : ""}`;
-    if (blockedOwners.has(item.owner_id)) return "Membre indisponible cette journée";
-    if (blockedIds.has(item.id)) return "Bloqué par le propriétaire cette journée";
+      return `${t("day.blocked.usedBy")} « ${conflict.project_name} »${conflict.day_title ? ` — ${conflict.day_title}` : ""}`;
+    if (blockedOwners.has(item.owner_id)) return t("day.blocked.member");
+    if (blockedIds.has(item.id)) return t("day.blocked.owner");
     return null;
   };
 
   const kitsByOwner = (ownerId: string) =>
     (kits.data ?? []).filter((kit) => kit.owner_id === ownerId);
+
+  const templates = useQuery({
+    queryKey: ["day-templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("day_templates")
+        .select("id, name, owner_id, day_template_items(equipment_id, member_id)")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const saveTemplate = useMutation({
+    mutationFn: async (name: string) => {
+      const rows = selected.data ?? [];
+      if (!rows.length) throw new Error(t("tpl.emptySelection"));
+      const { data: auth } = await supabase.auth.getUser();
+      const { data: tpl, error } = await supabase
+        .from("day_templates")
+        .insert({ owner_id: auth.user!.id, name: name.trim() })
+        .select("id")
+        .single();
+      if (error) throw error;
+      const { error: itemsError } = await supabase.from("day_template_items").insert(
+        rows.map((r) => ({
+          template_id: tpl.id,
+          equipment_id: r.equipment_id,
+          member_id: r.owner_id,
+        })),
+      );
+      if (itemsError) throw itemsError;
+    },
+    onSuccess: () => {
+      setTemplateName("");
+      queryClient.invalidateQueries({ queryKey: ["day-templates"] });
+      toast.success(t("tpl.saved"));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const applyTemplate = useMutation({
+    mutationFn: async (templateId: string) => {
+      const tpl = (templates.data ?? []).find((x) => x.id === templateId);
+      const items = (tpl?.day_template_items ?? []) as Array<{
+        equipment_id: string;
+        member_id: string;
+      }>;
+      const poolById = new Map((gear.data ?? []).map((g) => [g.id, g] as const));
+      const rows = items
+        .filter((i) => {
+          const item = poolById.get(i.equipment_id);
+          return !!item && !selectedIds.has(i.equipment_id) && !blockReason(item);
+        })
+        .map((i) => ({
+          shoot_day_id: dayId,
+          equipment_id: i.equipment_id,
+          owner_id: i.member_id,
+        }));
+      if (!rows.length) throw new Error(t("tpl.noneApplicable"));
+      const { error } = await supabase.from("shoot_day_equipment").insert(rows);
+      if (error) throw error;
+      return rows.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ["day-gear", dayId] });
+      toast.success(`${count} ${t("tpl.applied")}`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const addKit = useMutation({
     mutationFn: async ({ kitId, ownerId }: { kitId: string; ownerId: string }) => {
@@ -445,7 +591,7 @@ function DayPage() {
           owner_id: ownerId,
         }));
       if (!rows.length) {
-        throw new Error("Aucun objet de ce kit n'est disponible pour cette journée.");
+        throw new Error("" + t("tpl.noneApplicable") + "");
       }
       const { error } = await supabase.from("shoot_day_equipment").insert(rows);
       if (error) throw error;
@@ -481,7 +627,7 @@ function DayPage() {
       dayCrew.data?.find((m) => m.user_id === userId) ??
       projectCrew.data?.find((m) => m.user_id === userId);
     const p = row?.profiles as ProfileLite | null;
-    return p?.full_name || p?.email || "Membre";
+    return p?.full_name || p?.email || t("common.member");
   };
 
   const equipmentOf = (row: SelectedRow) =>
@@ -493,16 +639,10 @@ function DayPage() {
       notes: string | null;
     } | null;
 
+  const inputClass =
+    "w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
 
-
-  const dateLabel = day.data
-    ? new Date(`${day.data.shoot_date}T12:00:00`).toLocaleDateString("fr-CA", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
-    : "Journée";
+  const dateLabel = day.data ? formatFullDate(day.data.shoot_date, lang) : t("common.day");
 
   return (
     <AppShell
@@ -515,7 +655,7 @@ function DayPage() {
         project ? (
           <span className="flex flex-wrap items-center gap-1">
             <Link to="/companies/$companyId" params={{ companyId: project.company_id }} className="hover:underline">
-              Entreprise
+              {t("nav.companies")}
             </Link>
             <span>/</span>
             <Link to="/projects/$projectId" params={{ projectId: project.id }} className="hover:underline">
@@ -525,15 +665,113 @@ function DayPage() {
         ) : null
       }
       actions={
-        <Dialog>
-          <DialogTrigger asChild>
-            <button className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground shadow-sm transition-transform hover:-translate-y-px">
-              <ClipboardList className="size-4" /> Récapitulatif
-            </button>
-          </DialogTrigger>
+        <div className="flex flex-wrap items-center gap-2">
+          {isAdmin ? (
+            <>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="inline-flex items-center gap-1.5 rounded-lg border border-input px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent">
+                    <LayoutTemplate className="size-4" /> {t("tpl.title")}
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>{t("tpl.title")}</DialogTitle>
+                  </DialogHeader>
+                  <p className="text-sm text-muted-foreground">{t("tpl.subtitle")}</p>
+
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (templateName.trim()) saveTemplate.mutate(templateName);
+                    }}
+                    className="space-y-2 rounded-xl border border-border p-3"
+                  >
+                    <p className="label-tech">{t("tpl.saveTitle")}</p>
+                    <input
+                      value={templateName}
+                      onChange={(e) => setTemplateName(e.target.value)}
+                      placeholder={t("tpl.namePlaceholder")}
+                      maxLength={120}
+                      className={inputClass}
+                    />
+                    <button
+                      type="submit"
+                      disabled={saveTemplate.isPending}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+                    >
+                      <BookmarkPlus className="size-4" /> {t("tpl.save")}
+                    </button>
+                  </form>
+
+                  <div className="space-y-2">
+                    <p className="label-tech">{t("tpl.apply")}</p>
+                    {templates.data?.length ? (
+                      templates.data.map((tpl) => (
+                        <div
+                          key={tpl.id}
+                          className="flex items-center gap-2 rounded-xl border border-border p-3"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">{tpl.name}</p>
+                            <p className="label-tech">
+                              {(tpl.day_template_items ?? []).length} {t("tpl.items")}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => applyTemplate.mutate(tpl.id)}
+                            disabled={applyTemplate.isPending}
+                            className="rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-brand-foreground disabled:opacity-60"
+                          >
+                            {t("common.add")}
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">{t("tpl.empty")}</p>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <button
+                onClick={() =>
+                  setDayEdit(
+                    dayEdit
+                      ? null
+                      : {
+                          title: day.data?.title ?? "",
+                          location: day.data?.location ?? "",
+                          callTime: day.data?.call_time ?? "",
+                        },
+                  )
+                }
+                title={t("day.editDay")}
+                className="rounded-lg border border-input p-2 text-muted-foreground hover:bg-accent"
+              >
+                <Pencil className="size-4" />
+              </button>
+              <button
+                onClick={() => {
+                  if (window.confirm(t("common.confirmDelete"))) deleteDay.mutate();
+                }}
+                title={t("day.deleteDay")}
+                className="rounded-lg border border-input p-2 text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 className="size-4" />
+              </button>
+            </>
+          ) : null}
+          <Dialog>
+            <DialogTrigger asChild>
+              <button className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground shadow-sm transition-transform hover:-translate-y-px">
+                <ClipboardList className="size-4" /> {t("day.summary")}
+              </button>
+            </DialogTrigger>
+
           <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Récapitulatif — {dateLabel}</DialogTitle>
+              <DialogTitle>{t("day.summaryTitle")} — {dateLabel}</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
               {[day.data?.title, day.data?.location, day.data?.call_time]
@@ -611,7 +849,7 @@ function DayPage() {
                 ))
               ) : (
                 <p className="rounded-xl border border-dashed border-border p-3 text-sm text-muted-foreground">
-                  Aucun équipement retenu.
+                  {t("day.noGearSummary")}
                 </p>
               )}
 
@@ -637,7 +875,7 @@ function DayPage() {
                                   : "bg-destructive/15 text-destructive",
                             )}
                           >
-                            {WRANGLING_OPTIONS.find((o) => o.value === status)?.label}
+                            {t(`day.wrangling.${status}`)}
                           </span>
                           <span className="font-medium">{nameFor(row.user_id)}</span>
                         </li>
@@ -649,9 +887,7 @@ function DayPage() {
 
               {documents.data?.length ? (
                 <div className="overflow-hidden rounded-xl border border-tint-2/40 border-l-4 border-l-tint-2">
-                  <p className="bg-tint-2-soft px-3 py-2 text-sm font-semibold text-tint-2">
-                    Documents
-                  </p>
+                  <p className="bg-tint-2-soft px-3 py-2 text-sm font-semibold text-tint-2">{t("day.documents")}</p>
                   <ul className="space-y-1 p-3 text-sm">
                     {documents.data.map((doc) => (
                       <li key={doc.id}>
@@ -670,7 +906,7 @@ function DayPage() {
               {requests.data?.length ? (
                 <div className="overflow-hidden rounded-xl border border-tint-3/40 border-l-4 border-l-tint-3">
                   <p className="bg-tint-3-soft px-3 py-2 text-sm font-semibold text-tint-3">
-                    Notes et demandes spéciales
+                    {t("day.notesRequests")}
                   </p>
                   <ul className="space-y-1.5 p-3 text-sm">
                     {requests.data.map((r) => (
@@ -705,19 +941,100 @@ function DayPage() {
                 </div>
               ) : null}
 
+              <div className="overflow-hidden rounded-xl border border-tint-6/40 border-l-4 border-l-tint-6">
+                <p className="flex items-center gap-2 bg-tint-6-soft px-3 py-2 text-sm font-semibold text-tint-6">
+                  <MessageSquareText className="size-4" /> {t("debrief.title")}
+                </p>
+                <div className="space-y-2 p-3">
+                  <p className="text-xs text-muted-foreground">{t("debrief.hint")}</p>
+                  {isAdmin ? (
+                    <>
+                      <textarea
+                        value={debrief}
+                        onChange={(e) => setDebrief(e.target.value)}
+                        placeholder={t("debrief.placeholder")}
+                        rows={4}
+                        maxLength={4000}
+                        className={inputClass}
+                      />
+                      <button
+                        onClick={() => saveDebrief.mutate(debrief)}
+                        disabled={saveDebrief.isPending}
+                        className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-60"
+                      >
+                        {t("common.save")}
+                      </button>
+                    </>
+                  ) : (
+                    <p className="whitespace-pre-wrap text-sm">
+                      {debrief || <span className="text-muted-foreground">—</span>}
+                    </p>
+                  )}
+                </div>
+              </div>
+
             </div>
 
           </DialogContent>
         </Dialog>
+        </div>
       }
     >
 
+      {dayEdit ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            updateDay.mutate(dayEdit);
+          }}
+          className="panel mb-6 grid gap-2 p-3 sm:grid-cols-2"
+        >
+          <input
+            value={dayEdit.title}
+            onChange={(e) => setDayEdit({ ...dayEdit, title: e.target.value })}
+            placeholder={t("project.dayTitle")}
+            maxLength={120}
+            className={inputClass}
+          />
+          <input
+            value={dayEdit.location}
+            onChange={(e) => setDayEdit({ ...dayEdit, location: e.target.value })}
+            placeholder={t("project.location")}
+            maxLength={120}
+            className={inputClass}
+          />
+          <input
+            value={dayEdit.callTime}
+            onChange={(e) => setDayEdit({ ...dayEdit, callTime: e.target.value })}
+            placeholder={t("project.callTime")}
+            maxLength={30}
+            className={inputClass}
+          />
+          <div className="flex items-center gap-2">
+            <button
+              type="submit"
+              className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
+            >
+              {t("common.save")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDayEdit(null)}
+              className="rounded-md border border-input px-3 py-1.5 text-sm text-muted-foreground"
+            >
+              {t("common.cancel")}
+            </button>
+          </div>
+        </form>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+
         <section className="space-y-6">
           <Section
-            title="Équipe présente"
+            title={t("day.crewPresent")}
             icon={<span className="size-2 rounded-full bg-brand" />}
-            count={`${crewIds.length} présent(s)`}
+            count={`${crewIds.length} ${t("day.presentCount")}`}
             defaultOpen
           >
             <div className="panel divide-y divide-border">
@@ -742,21 +1059,21 @@ function DayPage() {
                               : "rounded-md border border-input px-2.5 py-1 text-xs text-muted-foreground"
                           }
                         >
-                          {on ? "Présent" : "Ajouter"}
+                          {on ? t("day.present") : t("common.add")}
                         </button>
                       ) : null}
                     </div>
                   );
                 })
               ) : (
-                <p className="p-6 text-sm text-muted-foreground">Aucun membre assigné.</p>
+                <p className="p-6 text-sm text-muted-foreground">{t("day.noCrew")}</p>
               )}
             </div>
           </Section>
 
 
           <Section
-            title="Feuille de service (PDF)"
+            title={t("day.callsheet")}
             icon={<FileText className="size-4 text-tint-5" />}
             count={`${documents.data?.length ?? 0}`}
             strip="head-strip-2"
@@ -782,11 +1099,11 @@ function DayPage() {
                   </div>
                 ))
               ) : (
-                <p className="p-4 text-sm text-muted-foreground">Aucun document pour l'instant.</p>
+                <p className="p-4 text-sm text-muted-foreground">{t("day.noDoc")}</p>
               )}
               <label className="flex cursor-pointer items-center gap-2 p-3 text-sm font-medium text-brand">
                 <Upload className="size-4" />
-                {uploadDoc.isPending ? "Téléversement…" : "Ajouter un PDF"}
+                {uploadDoc.isPending ? t("day.uploading") : t("day.addPdf")}
                 <input
                   type="file"
                   accept="application/pdf"
@@ -805,7 +1122,7 @@ function DayPage() {
 
 
           <Section
-            title="Disponible — à choisir"
+            title={t("day.available")}
             icon={<span className="size-2 rounded-full bg-tint-5" />}
             count={`${poolByOwner.reduce((n, [, items]) => n + items.length, 0)} item(s)`}
             strip="head-strip-2"
@@ -819,11 +1136,11 @@ function DayPage() {
                     <div className="border-b border-border bg-accent/60 px-3 py-2">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium">{nameFor(ownerId)}</p>
-                        <span className="label-tech">{items.length} dispo.</span>
+                        <span className="label-tech">{items.length} {t("day.availableShort")}</span>
                       </div>
                       {isAdmin && kitsByOwner(ownerId).length ? (
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          <span className="label-tech">Kits :</span>
+                          <span className="label-tech">{t("day.kits")}</span>
                           {kitsByOwner(ownerId).map((kit) => (
                             <button
                               key={kit.id}
@@ -878,8 +1195,7 @@ function DayPage() {
                                       </span>
                                       {reason ? (
                                         <span className="rounded-full bg-destructive px-2 py-0.5 text-[11px] font-semibold text-destructive-foreground">
-                                          Indisponible
-                                        </span>
+                                          {t("day.unavailable")}</span>
                                       ) : null}
                                     </div>
                                     {reason ? (
@@ -905,7 +1221,7 @@ function DayPage() {
                                           : "bg-tint-5-soft text-tint-5",
                                       )}
                                     >
-                                      {reason ? "Pris" : "Choisir"}
+                                      {reason ? t("day.taken") : t("day.pick")}
                                     </button>
                                   ) : null}
                                 </div>
@@ -920,7 +1236,7 @@ function DayPage() {
                 ))
               ) : (
                 <p className="panel p-6 text-sm text-muted-foreground">
-                  Tout l'équipement disponible a été choisi (ou aucun membre présent).
+                  {t("day.allPicked")}
                 </p>
               )}
             </div>
@@ -930,7 +1246,7 @@ function DayPage() {
 
         <section className="space-y-6">
           <Section
-            title="Choisi — à apporter"
+            title={t("day.chosen")}
             icon={<span className="size-2 rounded-full bg-brand" />}
             count={`${selected.data?.length ?? 0} item(s)`}
             defaultOpen
@@ -985,9 +1301,7 @@ function DayPage() {
                                           })
                                         }
                                         className="rounded-md border border-input px-2.5 py-1 text-xs text-muted-foreground hover:text-destructive"
-                                      >
-                                        Retirer
-                                      </button>
+                                      >{t("day.remove")}</button>
                                     ) : null}
                                   </div>
                                 );
@@ -1002,7 +1316,7 @@ function DayPage() {
                 ))
               ) : (
                 <p className="panel p-6 text-sm text-muted-foreground">
-                  Rien de retenu pour l'instant.
+                  {t("day.nothingPicked")}
                 </p>
               )}
             </div>
@@ -1011,7 +1325,7 @@ function DayPage() {
 
 
           <Section
-            title="Équipement manquant / demandes spéciales"
+            title={t("day.requests")}
             icon={<Plus className="size-4 text-tint-5" />}
             count={`${requests.data?.length ?? 0}`}
             strip="head-strip-2"
@@ -1027,7 +1341,7 @@ function DayPage() {
               <input
                 value={request.label}
                 onChange={(e) => setRequest({ ...request, label: e.target.value })}
-                placeholder="Ex. Trépied lourd manquant"
+                placeholder={t("day.requestLabel")}
                 maxLength={120}
                 required
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -1035,7 +1349,7 @@ function DayPage() {
               <textarea
                 value={request.details}
                 onChange={(e) => setRequest({ ...request, details: e.target.value })}
-                placeholder="Détails, note pour l'équipe (optionnel)"
+                placeholder={t("day.requestDetails")}
                 maxLength={1000}
                 rows={2}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -1044,7 +1358,7 @@ function DayPage() {
                 type="submit"
                 className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground"
               >
-                <Plus className="size-4" /> Ajouter la demande
+                <Plus className="size-4" /> {t("day.addRequest")}
               </button>
             </form>
 
@@ -1081,9 +1395,9 @@ function DayPage() {
 
       <div className="mt-6">
         <Section
-          title="Data wrangling"
+          title={t("day.wrangling")}
           icon={<HardDriveDownload className="size-4 text-brand" />}
-          count={`${(wrangling.data ?? []).filter((w) => w.status === "done").length}/${crewIds.length} fait`}
+          count={`${(wrangling.data ?? []).filter((w) => w.status === "done").length}/${crewIds.length} ${t("day.wranglingDone")}`}
         >
           <div className="panel divide-y divide-border">
             {crewIds.length ? (
@@ -1110,7 +1424,7 @@ function DayPage() {
                             status === opt.value ? opt.on : opt.off,
                           )}
                         >
-                          {opt.label}
+                          {t(opt.labelKey)}
                         </button>
                       ))}
                     </div>
@@ -1119,7 +1433,7 @@ function DayPage() {
               })
             ) : (
               <p className="p-6 text-sm text-muted-foreground">
-                Ajoutez des membres présents pour suivre le data wrangling.
+                {t("day.wranglingEmpty")}
               </p>
             )}
           </div>

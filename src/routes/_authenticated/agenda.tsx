@@ -5,6 +5,8 @@ import { AppShell } from "@/components/AppShell";
 import { Section } from "@/components/Section";
 import { supabase } from "@/integrations/supabase/client";
 import { toDateKey } from "@/lib/equipment-categories";
+import { formatRange, locOf, parseDay, groupDayRanges } from "@/lib/dates";
+import { useSettings } from "@/lib/settings";
 
 export const Route = createFileRoute("/_authenticated/agenda")({
   head: () => ({
@@ -13,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/agenda")({
       {
         name: "description",
         content:
-          "Toutes vos prochaines journées de tournage, toutes entreprises et projets confondus.",
+          "Vos prochaines journées de tournage où vous êtes présent, toutes entreprises confondues.",
       },
       { property: "og:title", content: "Journées à venir — GearUp" },
       {
@@ -30,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/agenda")({
 type DayRow = {
   id: string;
   shoot_date: string;
+  range_id: string | null;
   title: string | null;
   location: string | null;
   call_time: string | null;
@@ -38,13 +41,25 @@ type DayRow = {
 
 function AgendaPage() {
   const today = toDateKey(new Date());
+  const { t, lang } = useSettings();
 
   const days = useQuery({
     queryKey: ["upcoming-days", today],
     queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const { data: memberships, error: mErr } = await supabase
+        .from("shoot_day_members")
+        .select("shoot_day_id")
+        .eq("user_id", auth.user!.id);
+      if (mErr) throw mErr;
+      const ids = memberships.map((m) => m.shoot_day_id);
+      if (!ids.length) return [] as DayRow[];
       const { data, error } = await supabase
         .from("shoot_days")
-        .select("id, shoot_date, title, location, call_time, projects(id, name, companies(id, name))")
+        .select(
+          "id, shoot_date, range_id, title, location, call_time, projects(id, name, companies(id, name))",
+        )
+        .in("id", ids)
         .gte("shoot_date", today)
         .order("shoot_date");
       if (error) throw error;
@@ -52,74 +67,80 @@ function AgendaPage() {
     },
   });
 
-  const rows = days.data ?? [];
+  const groups = groupDayRanges(days.data ?? []);
 
-  const byMonth = rows.reduce<Record<string, DayRow[]>>((acc, row) => {
-    const key = new Date(`${row.shoot_date}T12:00:00`).toLocaleDateString("fr-CA", {
+  const byMonth = groups.reduce<Record<string, typeof groups>>((acc, group) => {
+    const key = parseDay(group.first.shoot_date).toLocaleDateString(locOf(lang), {
       month: "long",
       year: "numeric",
     });
-    (acc[key] ??= []).push(row);
+    (acc[key] ??= []).push(group);
     return acc;
   }, {});
 
   return (
-    <AppShell
-      title="Journées à venir"
-      subtitle="Toutes vos prochaines journées de tournage, peu importe l'entreprise ou le projet."
-    >
+    <AppShell title={t("agenda.title")} subtitle={t("agenda.subtitle")}>
       {days.isLoading ? (
-        <p className="text-sm text-muted-foreground">Chargement…</p>
-      ) : rows.length ? (
+        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+      ) : groups.length ? (
         <div className="space-y-4">
-          {Object.entries(byMonth).map(([month, monthRows], index) => (
+          {Object.entries(byMonth).map(([month, monthGroups], index) => (
             <Section
               key={month}
               title={month}
               icon={<CalendarClock className="size-4 text-brand" />}
-              count={`${monthRows.length} journée(s)`}
+              count={`${monthGroups.length} ${t("common.days")}`}
               defaultOpen={index === 0}
             >
               <div className="space-y-2">
-                {monthRows.map((d) => (
-                  <Link
-                    key={d.id}
-                    to="/days/$dayId"
-                    params={{ dayId: d.id }}
-                    className="panel flex items-center gap-3 p-4 transition-colors hover:bg-accent"
-                  >
-                    <span className="flex w-14 shrink-0 flex-col items-center rounded-lg bg-brand-soft py-1.5 text-brand">
-                      <span className="text-lg font-bold leading-none">
-                        {new Date(`${d.shoot_date}T12:00:00`).getDate()}
+                {monthGroups.map((group) => {
+                  const d = group.first;
+                  const multi = group.days.length > 1;
+                  return (
+                    <Link
+                      key={group.key}
+                      to="/days/$dayId"
+                      params={{ dayId: d.id }}
+                      className="panel flex items-center gap-3 p-4 transition-colors hover:bg-accent"
+                    >
+                      <span className="flex w-16 shrink-0 flex-col items-center rounded-lg bg-brand-soft py-1.5 text-brand">
+                        <span className="text-lg font-bold leading-none">
+                          {multi
+                            ? `${parseDay(d.shoot_date).getDate()}–${parseDay(group.last.shoot_date).getDate()}`
+                            : parseDay(d.shoot_date).getDate()}
+                        </span>
+                        <span className="text-[11px] uppercase">
+                          {multi
+                            ? `${group.days.length} ${t("common.day")}s`
+                            : parseDay(d.shoot_date).toLocaleDateString(locOf(lang), {
+                                weekday: "short",
+                              })}
+                        </span>
                       </span>
-                      <span className="text-[11px] uppercase">
-                        {new Date(`${d.shoot_date}T12:00:00`).toLocaleDateString("fr-CA", {
-                          weekday: "short",
-                        })}
-                      </span>
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">
-                        {[d.projects?.companies?.name, d.projects?.name]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </p>
-                      <p className="label-tech truncate">
-                        {[d.title, d.location, d.call_time].filter(Boolean).join(" · ") ||
-                          "À planifier"}
-                      </p>
-                    </div>
-                    <ChevronRight className="ml-auto size-4 shrink-0 text-muted-foreground" />
-                  </Link>
-                ))}
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">
+                          {[d.projects?.companies?.name, d.projects?.name]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                        <p className="label-tech truncate">
+                          {formatRange(d.shoot_date, group.last.shoot_date, lang)}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {[d.title, d.location, d.call_time].filter(Boolean).join(" · ") ||
+                            t("agenda.toplan")}
+                        </p>
+                      </div>
+                      <ChevronRight className="ml-auto size-4 shrink-0 text-muted-foreground" />
+                    </Link>
+                  );
+                })}
               </div>
             </Section>
           ))}
         </div>
       ) : (
-        <div className="panel p-6 text-sm text-muted-foreground">
-          Aucune journée de tournage à venir.
-        </div>
+        <div className="panel p-6 text-sm text-muted-foreground">{t("agenda.empty")}</div>
       )}
     </AppShell>
   );
