@@ -712,7 +712,7 @@ function DayPage() {
                                   : "bg-destructive/15 text-destructive",
                             )}
                           >
-                            {WRANGLING_OPTIONS.find((o) => o.value === status)?.label}
+                            {WRANGLING_OPTIONS.find((o) => o.value === status)?.labelKey ?? "")}
                           </span>
                           <span className="font-medium">{nameFor(row.user_id)}</span>
                         </li>
@@ -1185,7 +1185,7 @@ function DayPage() {
                             status === opt.value ? opt.on : opt.off,
                           )}
                         >
-                          {opt.label}
+                          {t(opt.labelKey)}
                         </button>
                       ))}
                     </div>
