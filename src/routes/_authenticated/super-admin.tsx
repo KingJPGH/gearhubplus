@@ -2,10 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Building2, CalendarDays, FolderKanban, Trash2, Users } from "lucide-react";
+import { Building2, CalendarDays, FolderKanban, ShieldCheck, Trash2, Users } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSuperAdmin } from "@/lib/roles";
+import { addSuperAdmin, listSuperAdmins, removeSuperAdmin } from "@/lib/superadmin.functions";
 
 export const Route = createFileRoute("/_authenticated/super-admin")({
   head: () => ({
@@ -32,7 +33,33 @@ const inputClass =
 function SuperAdminPage() {
   const isSuper = useIsSuperAdmin();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<"companies" | "projects" | "days" | "members">("companies");
+  const [tab, setTab] = useState<"companies" | "projects" | "days" | "members" | "admins">("companies");
+  const [adminEmail, setAdminEmail] = useState("");
+
+  const superAdmins = useQuery({
+    queryKey: ["sa-super-admins"],
+    enabled: isSuper,
+    queryFn: () => listSuperAdmins(),
+  });
+
+  const addAdmin = useMutation({
+    mutationFn: () => addSuperAdmin({ data: { email: adminEmail.trim() } }),
+    onSuccess: () => {
+      setAdminEmail("");
+      queryClient.invalidateQueries({ queryKey: ["sa-super-admins"] });
+      toast.success("Super administrateur ajouté");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeAdmin = useMutation({
+    mutationFn: (userId: string) => removeSuperAdmin({ data: { userId } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sa-super-admins"] });
+      toast.success("Super administrateur retiré");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const companies = useQuery({
     queryKey: ["sa-companies"],
@@ -160,6 +187,7 @@ function SuperAdminPage() {
     { key: "projects", label: "Projets", icon: FolderKanban, count: projects.data?.length },
     { key: "days", label: "Journées", icon: CalendarDays, count: days.data?.length },
     { key: "members", label: "Membres", icon: Users, count: members.data?.length },
+    { key: "admins", label: "Super admins", icon: ShieldCheck, count: superAdmins.data?.length },
   ] as const;
 
   const companyName = (id: string) => companies.data?.find((c) => c.id === id)?.name ?? "—";
@@ -274,6 +302,57 @@ function SuperAdminPage() {
               onDelete={() => remove.mutate({ table: "profiles", id: m.id, key: "sa-members" })}
             />
           ))}
+
+        {tab === "admins" && (
+          <div className="space-y-3">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (adminEmail.trim()) addAdmin.mutate();
+              }}
+              className="panel flex flex-wrap gap-2 p-4"
+            >
+              <input
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                placeholder="courriel@exemple.com"
+                maxLength={255}
+                required
+                className={`${inputClass} min-w-56 flex-1`}
+              />
+              <button
+                type="submit"
+                disabled={addAdmin.isPending}
+                className="btn-brand px-5 py-2 text-sm disabled:opacity-60"
+              >
+                Ajouter
+              </button>
+            </form>
+            {superAdmins.data?.map((a) => {
+              const profile = a.profiles as { full_name: string; email: string | null } | null;
+              return (
+                <div key={a.id} className="panel flex flex-wrap items-center gap-3 p-3">
+                  <span className="flex size-9 items-center justify-center rounded-md bg-brand-soft text-primary">
+                    <ShieldCheck className="size-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{profile?.full_name ?? "—"}</p>
+                    <p className="label-tech truncate">{profile?.email ?? a.user_id}</p>
+                  </div>
+                  <button
+                    onClick={() => removeAdmin.mutate(a.user_id)}
+                    disabled={removeAdmin.isPending}
+                    className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
+                    aria-label="Retirer"
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </AppShell>
   );
