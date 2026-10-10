@@ -2,10 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Building2, CalendarDays, FolderKanban, Trash2, Users } from "lucide-react";
+import { Building2, CalendarDays, FolderKanban, ShieldCheck, Trash2, Users } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSuperAdmin } from "@/lib/roles";
+import { addSuperAdmin, listSuperAdmins, removeSuperAdmin } from "@/lib/superadmin.functions";
 
 export const Route = createFileRoute("/_authenticated/super-admin")({
   head: () => ({
@@ -32,7 +33,33 @@ const inputClass =
 function SuperAdminPage() {
   const isSuper = useIsSuperAdmin();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<"companies" | "projects" | "days" | "members">("companies");
+  const [tab, setTab] = useState<"companies" | "projects" | "days" | "members" | "admins">("companies");
+  const [adminEmail, setAdminEmail] = useState("");
+
+  const superAdmins = useQuery({
+    queryKey: ["sa-super-admins"],
+    enabled: isSuper,
+    queryFn: () => listSuperAdmins(),
+  });
+
+  const addAdmin = useMutation({
+    mutationFn: () => addSuperAdmin({ data: { email: adminEmail.trim() } }),
+    onSuccess: () => {
+      setAdminEmail("");
+      queryClient.invalidateQueries({ queryKey: ["sa-super-admins"] });
+      toast.success("Super administrateur ajouté");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeAdmin = useMutation({
+    mutationFn: (userId: string) => removeSuperAdmin({ data: { userId } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sa-super-admins"] });
+      toast.success("Super administrateur retiré");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const companies = useQuery({
     queryKey: ["sa-companies"],
