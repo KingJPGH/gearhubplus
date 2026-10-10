@@ -9,27 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedEquipementRouteImport } from './routes/_authenticated/equipement'
-import { Route as AuthenticatedKitsRouteImport } from './routes/_authenticated/kits'
-import { Route as AuthenticatedParametresRouteImport } from './routes/_authenticated/parametres'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSuperAdminRouteImport } from './routes/_authenticated/super-admin'
-import { Route as AuthenticatedCompaniesCompanyIdRouteImport } from './routes/_authenticated/companies.$companyId'
-import { Route as AuthenticatedDaysDayIdRouteImport } from './routes/_authenticated/days.$dayId'
+import { Route as AuthenticatedParametresRouteImport } from './routes/_authenticated/parametres'
+import { Route as AuthenticatedKitsRouteImport } from './routes/_authenticated/kits'
+import { Route as AuthenticatedEquipementRouteImport } from './routes/_authenticated/equipement'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
+import { Route as AuthenticatedDaysDayIdRouteImport } from './routes/_authenticated/days.$dayId'
+import { Route as AuthenticatedCompaniesCompanyIdRouteImport } from './routes/_authenticated/companies.$companyId'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -37,29 +33,18 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
-  id: '/agenda',
-  path: '/agenda',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedEquipementRoute = AuthenticatedEquipementRouteImport.update({
-  id: '/equipement',
-  path: '/equipement',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedKitsRoute = AuthenticatedKitsRouteImport.update({
-  id: '/kits',
-  path: '/kits',
+const AuthenticatedSuperAdminRoute = AuthenticatedSuperAdminRouteImport.update({
+  id: '/super-admin',
+  path: '/super-admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedParametresRoute = AuthenticatedParametresRouteImport.update({
@@ -67,15 +52,30 @@ const AuthenticatedParametresRoute = AuthenticatedParametresRouteImport.update({
   path: '/parametres',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSuperAdminRoute = AuthenticatedSuperAdminRouteImport.update({
-  id: '/super-admin',
-  path: '/super-admin',
+const AuthenticatedKitsRoute = AuthenticatedKitsRouteImport.update({
+  id: '/kits',
+  path: '/kits',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedCompaniesCompanyIdRoute =
-  AuthenticatedCompaniesCompanyIdRouteImport.update({
-    id: '/companies/$companyId',
-    path: '/companies/$companyId',
+const AuthenticatedEquipementRoute = AuthenticatedEquipementRouteImport.update({
+  id: '/equipement',
+  path: '/equipement',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProjectsProjectIdRoute =
+  AuthenticatedProjectsProjectIdRouteImport.update({
+    id: '/projects/$projectId',
+    path: '/projects/$projectId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDaysDayIdRoute = AuthenticatedDaysDayIdRouteImport.update({
@@ -83,10 +83,10 @@ const AuthenticatedDaysDayIdRoute = AuthenticatedDaysDayIdRouteImport.update({
   path: '/days/$dayId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedProjectsProjectIdRoute =
-  AuthenticatedProjectsProjectIdRouteImport.update({
-    id: '/projects/$projectId',
-    path: '/projects/$projectId',
+const AuthenticatedCompaniesCompanyIdRoute =
+  AuthenticatedCompaniesCompanyIdRouteImport.update({
+    id: '/companies/$companyId',
+    path: '/companies/$companyId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
@@ -189,18 +189,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -210,39 +203,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/agenda': {
-      id: '/_authenticated/agenda'
-      path: '/agenda'
-      fullPath: '/agenda'
-      preLoaderRoute: typeof AuthenticatedAgendaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/equipement': {
-      id: '/_authenticated/equipement'
-      path: '/equipement'
-      fullPath: '/equipement'
-      preLoaderRoute: typeof AuthenticatedEquipementRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/kits': {
-      id: '/_authenticated/kits'
-      path: '/kits'
-      fullPath: '/kits'
-      preLoaderRoute: typeof AuthenticatedKitsRouteImport
+    '/_authenticated/super-admin': {
+      id: '/_authenticated/super-admin'
+      path: '/super-admin'
+      fullPath: '/super-admin'
+      preLoaderRoute: typeof AuthenticatedSuperAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/parametres': {
@@ -252,18 +231,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedParametresRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/super-admin': {
-      id: '/_authenticated/super-admin'
-      path: '/super-admin'
-      fullPath: '/super-admin'
-      preLoaderRoute: typeof AuthenticatedSuperAdminRouteImport
+    '/_authenticated/kits': {
+      id: '/_authenticated/kits'
+      path: '/kits'
+      fullPath: '/kits'
+      preLoaderRoute: typeof AuthenticatedKitsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/companies/$companyId': {
-      id: '/_authenticated/companies/$companyId'
-      path: '/companies/$companyId'
-      fullPath: '/companies/$companyId'
-      preLoaderRoute: typeof AuthenticatedCompaniesCompanyIdRouteImport
+    '/_authenticated/equipement': {
+      id: '/_authenticated/equipement'
+      path: '/equipement'
+      fullPath: '/equipement'
+      preLoaderRoute: typeof AuthenticatedEquipementRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/agenda': {
+      id: '/_authenticated/agenda'
+      path: '/agenda'
+      fullPath: '/agenda'
+      preLoaderRoute: typeof AuthenticatedAgendaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/projects/$projectId': {
+      id: '/_authenticated/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/days/$dayId': {
@@ -273,11 +273,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDaysDayIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/projects/$projectId': {
-      id: '/_authenticated/projects/$projectId'
-      path: '/projects/$projectId'
-      fullPath: '/projects/$projectId'
-      preLoaderRoute: typeof AuthenticatedProjectsProjectIdRouteImport
+    '/_authenticated/companies/$companyId': {
+      id: '/_authenticated/companies/$companyId'
+      path: '/companies/$companyId'
+      fullPath: '/companies/$companyId'
+      preLoaderRoute: typeof AuthenticatedCompaniesCompanyIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
