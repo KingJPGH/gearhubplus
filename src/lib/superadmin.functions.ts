@@ -15,11 +15,19 @@ export const listSuperAdmins = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("user_roles")
-      .select("id, user_id, created_at, profiles(full_name, email)")
+      .select("id, user_id, created_at")
       .eq("role", "super_admin")
       .order("created_at");
     if (error) throw new Error(error.message);
-    return data;
+    const ids = data.map((r) => r.user_id);
+    const { data: profiles } = await supabaseAdmin
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+    return data.map((r) => ({
+      ...r,
+      profiles: profiles?.find((p) => p.id === r.user_id) ?? null,
+    }));
   });
 
 const addSchema = z.object({ email: z.string().trim().email().max(255) });
